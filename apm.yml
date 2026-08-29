@@ -1,0 +1,33 @@
+name: Gatelin
+version: 1.0.0
+author: LCluber
+targets:
+  - copilot
+  - cursor
+dependencies:
+  apm:
+    # Agents
+    - ALTEN-group/coding-pal/agents/unit-test.agent.md
+    # Prompts
+    - ALTEN-group/coding-pal/prompts/node-unit-tests.prompt.md
+    - ALTEN-group/coding-pal/prompts/angular-unit-tests.prompt.md
+    - ALTEN-group/coding-pal/prompts/angular-e2e-tests.prompt.md
+    - ALTEN-group/coding-pal/prompts/postgres-liquibase-tests.prompt.md
+    # Instructions
+    - ALTEN-group/coding-pal/instructions/sharp-agent.instructions.md
+    - ALTEN-group/coding-pal/instructions/node-express.instructions.md
+    - ALTEN-group/coding-pal/instructions/node-unit-tests.instructions.md
+    - ALTEN-group/coding-pal/instructions/postgres-liquibase.instructions.md
+    - ALTEN-group/coding-pal/instructions/postgres-liquibase-tests.instructions.md
+    - ALTEN-group/coding-pal/instructions/docker.instructions.md
+    - ALTEN-group/coding-pal/instructions/angular-admin.instructions.md
+    - ALTEN-group/coding-pal/instructions/angular-unit-tests.instructions.md
+    - ALTEN-group/coding-pal/instructions/angular-e2e-tests.instructions.md
+    # Skills (folder bundles — SKILL.md + references/ + scripts/)
+    - git: ALTEN-group/coding-pal
+      skills:
+        - node-express-examples
+        - postgres-liquibase-examples
+        - docker-examples
+        - angular-admin-examples
+  mcp: {}
