@@ -1,19 +1,9 @@
 import { execute } from "@dwtechs/antity-pgsql";
 
-const ALLOWED_HISTORY_FIELDS = new Set(["routeId"]);
-
 /**
- * Groups history rows that belong to the same logical action (e.g. a route
- * update that also rewrites its route_operation/route_method junction rows)
- * into a single entry.
- *
- * Rows are grouped by (tstamp, consumerId, record.id): Postgres `now()` is
- * transaction-stable so every row written by the same transaction shares the
- * same tstamp, and record.id (the audited entity's own id, reused by
- * junction-table history rows) keeps unrelated records apart when several
- * of them are updated in a single bulk transaction. Merged group keeps the
- * first row's id/operation/tstamp/consumerName and combines all `record`
- * fields into one object.
+ * Groups history rows belonging to the same user-domain transaction.
+ * This combines a user profile change with its user_role changes while
+ * keeping unrelated records separate.
  * @param {Array<object>} rows - rows returned by query()/queryByField(), ordered by tstamp ASC, id ASC
  * @returns {Array<object>} grouped history entries
  */
@@ -86,43 +76,7 @@ function query(tableName, id, schema = "public") {
   return execute(sql, [schema, tableNames, id], null);
 }
 
-function getByField(tableName, field, schema = "public") {
-  return (req, res, next) => {
-    const value = req.params[field];
-    if (!value) return next({ statusCode: 400, message: `Missing ${field}` });
-
-    queryByField(tableName, field, value, schema)
-      .then((r) => {
-        if (!r.rowCount)
-          return next({ statusCode: 404, message: "history not found" });
-        const rows = groupByAction(r.rows);
-        if (rows.length === 1 && rows[0].operation === "INSERT")
-          return next({ statusCode: 404, message: "history not found" });
-        res.locals.rows = rows;
-        res.locals.total = rows.length;
-        next();
-      })
-      .catch((err) => next(err));
-  };
-}
-
-function queryByField(tableName, field, value, schema = "public") {
-  if (!ALLOWED_HISTORY_FIELDS.has(field))
-    throw new Error(`Invalid history field: ${field}`);
-  const tableNames = Array.isArray(tableName) ? tableName : [tableName];
-  const sql = `
-    SELECT id, tstamp, operation, "userId" AS "consumerId", "userName" AS "consumerName", record
-    FROM log.history
-    WHERE "schemaName" = $1
-      AND "tableName" = ANY($2::text[])
-      AND CAST(record->>'${field}' AS INT) = $3
-    ORDER BY tstamp ASC, id ASC
-  `;
-  return execute(sql, [schema, tableNames, value], null);
-}
-
 export default {
   get,
-  getByField,
   groupByAction,
 };

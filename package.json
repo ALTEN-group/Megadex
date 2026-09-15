@@ -1,13 +1,11 @@
 {
-	"name": "gatelin",
-	"version": "0.1.0-alpha.7",
-	"description": "Backend for Frontend (BFF): an application API layer behind a reverse proxy, with JWT sessions, RBAC, and authenticated forwarding to internal microservices.",
+	"name": "megadex",
+	"version": "0.1.0-alpha.1",
+	"description": "Megadex user profile, preferences, and reference-data service.",
 	"keywords": [
-		"bff",
-		"backend-for-frontend",
-		"jwt",
-		"rbac",
-		"acl",
+		"user-profile",
+		"preferences",
+		"reference-data",
 		"express"
 	],
 	"main": "src/server.js",
@@ -17,27 +15,23 @@
 		"dev": "node --watch src/server.js",
 		"test": "NODE_OPTIONS='--experimental-vm-modules' jest",
 		"test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
-		"lint": "biome check src/",
-		"lint:fix": "biome check --write src/",
-		"format": "biome format src/",
-		"format:fix": "biome format --write src/"
+		"lint": "biome check src/ tests/",
+		"lint:fix": "biome check --write src/ tests/",
+		"format": "biome format src/ tests/",
+		"format:fix": "biome format --write src/ tests/"
 	},
 	"author": "Ludovic Cluber",
 	"license": "MIT",
 	"dependencies": {
 		"@dwtechs/antity-pgsql": "0.23.0",
-		"@dwtechs/checkard": "3.6.1",
 		"@dwtechs/errandler-express": "0.1.1",
+		"@dwtechs/gatelin-express": "0.3.0",
 		"@dwtechs/healix-express": "0.2.0",
 		"@dwtechs/servpico-express": "0.3.1",
 		"@dwtechs/sparray": "0.2.1",
-		"@dwtechs/toker-express": "0.9.0",
 		"@dwtechs/winstan": "0.7.1",
 		"@dwtechs/winstan-plugin-express-perf": "0.3.0",
-		"cookie-parser": "1.4.7",
-		"express": "5.2.1",
-		"express-rate-limit": "8.6.2",
-		"safe-regex2": "5.1.1"
+		"express": "5.2.1"
 	},
 	"devDependencies": {
 		"@babel/core": "7.29.7",

@@ -1,39 +1,56 @@
 // @ts-check
 import express from "express";
+import pEnt from "../entities/preference.js";
+import history from "../middlewares/history.js";
+import { requireIdentity } from "../middlewares/identity.js";
+import schema from "../middlewares/schema.js";
+import * as preferences from "../services/preference.js";
 
 const router = express.Router();
+router.use(requireIdentity);
 
-import pEnt from "../entities/preference.js";
-import rEnt from "../entities/resource.js";
-import { filterByIdAndUserIdAndResource } from "../middlewares/filters/byIdAndUserIdAndResource.js";
-import { filterByName } from "../middlewares/filters/byName.js";
-import { assertRowsOwnedAndUnlocked } from "../middlewares/mappers/preference/assertRowsOwnedAndUnlocked.js";
-import { getPreferences } from "../middlewares/mappers/preference/getPreferences.js";
-import { injectUserIdAndResourceId } from "../middlewares/mappers/preference/injectUserIdAndResourceId.js";
+const run = (operation) => async (req, res, next) => {
+  try {
+    const rows = await operation(
+      res.locals.consumer.userId,
+      req.body?.rows ?? req.body,
+    );
+    res.locals.rows = rows;
+    res.locals.total = rows.length;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
-// Get the merged view list (system templates + this user's own preferences)
-router.get("/:resource", getPreferences);
-// Create a preference conf
-router.post(
-  "/:resource",
-  filterByName, // injects resource filter
-  rEnt.get, // fetches the resource to res.locals.rows. Fails with 404 if the resource name doesn't exist
-  injectUserIdAndResourceId, // inject userId and resourceId to req.body.rows
-  pEnt.addArraySubstack, // adds the preference to db
-);
-// Update preferences.
-// Fail-closed pre-flight: reject unless every req.body.rows[].id is owned by
-// the caller, unlocked, and belongs to :resource. Without this middleware,
-// updateArraySubstack would batch-UPDATE by id alone, allowing any authenticated
-// user to overwrite other users' rows or locked system templates (IDOR).
-router.put("/:resource", assertRowsOwnedAndUnlocked, pEnt.updateArraySubstack);
-// Delete a single user-owned preference.
-// guarantee the row belongs to the authenticated user
-router.delete(
-  "/:resource/:id",
-  filterByIdAndUserIdAndResource, // injects preference filter
-  pEnt.get, // fetches the row to res.locals.rows. Fails with 404 if the preference is not owned by this user
-  pEnt.delete, // deletes the row from preference
+router.post("/search", async (req, res, next) => {
+  try {
+    const rows = await preferences.search(res.locals.consumer.userId, req.body);
+    res.locals.rows = rows;
+    res.locals.total = rows.length;
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+router.post("/", run(preferences.create));
+router.put("/", run(preferences.update));
+router.post("/archive", run(preferences.archive));
+router.get("/schema", schema.get(pEnt));
+router.get(
+  "/:id/history",
+  async (req, res, next) => {
+    try {
+      await preferences.assertOwner(
+        res.locals.consumer.userId,
+        Number(req.params.id),
+      );
+      next();
+    } catch (error) {
+      next(error);
+    }
+  },
+  history.get("preference"),
 );
 
 export default router;
