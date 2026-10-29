@@ -46,7 +46,7 @@
         }
 
         .wordmark {
-          // Bottom-aligned so the F and the text share a common baseline.
+          // Bottom-aligned so the M and the text share a common baseline.
           display: inline-flex;
           align-items: flex-end;
           line-height: 1;
@@ -63,12 +63,12 @@
           }
 
           .wordmark-text {
-            // Scaled so the text cap-top aligns with the F top when bottom-aligned.
+            // Scaled so the text cap-top aligns with the M top when bottom-aligned.
             font-size: 0.78em;
             font-family: "Bebas Neue", sans-serif;
             letter-spacing: 0.04em;
             line-height: 1;
-            background: linear-gradient(135deg, #ffb347 0%, #ff5500 100%);
+            background: linear-gradient(135deg, #818cf8 0%, #4338ca 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
