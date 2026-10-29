@@ -46,8 +46,13 @@ cd megadex
 # 2. Generate the development environment file
 bash scripts/setup-env.sh
 
-# 3. Start the stack (admin UI at http://localhost:8100/megadex/)
+# 3. Start the stack (Gatelin + Foxnox + Megadex). Dev user passwords are seeded
+#    and printed on first start; rotate them with `bash scripts/setup-mocks.sh`.
 bash scripts/start-dev.sh
+#    Megadex admin: http://localhost:8100/megadex/
+#    Gatelin admin: http://localhost:8100/gatelin/  (roles, permissions, CORS)
+#    Foxnox admin:  http://localhost:8100/foxnox/   (password policies)
+#    Mailpit:       http://localhost:8025/
 
 # 4. Optional: run the admin e2e suite
 bash scripts/e2e.sh

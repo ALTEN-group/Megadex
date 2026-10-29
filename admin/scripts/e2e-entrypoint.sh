@@ -17,7 +17,7 @@ dump_diagnostics() {
 
   echo
   echo "--- DNS resolution of key service names (from this container) ---"
-  for host in traefik admin megadex; do
+  for host in traefik admin gatelin megadex; do
     if entries=$(getent hosts "$host" 2>/dev/null); then
       echo "  $host → $entries"
     else

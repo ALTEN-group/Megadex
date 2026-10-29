@@ -49,6 +49,12 @@ services:
       #liquibase
       LIQUIBASE_USER: ${LIQUIBASE_DB_USER}
       LIQUIBASE_PWD: ${LIQUIBASE_DB_PWD}
+      # gatelin
+      GATELIN_USER: ${GATELIN_DB_USER}
+      GATELIN_PWD: ${GATELIN_DB_PWD}
+      # foxnox
+      FOXNOX_USER: ${FOXNOX_DB_USER}
+      FOXNOX_PWD: ${FOXNOX_DB_PWD}
       # megadex
       MEGADEX_USER: ${MEGADEX_DB_USER}
       MEGADEX_PWD: ${MEGADEX_DB_PWD}
@@ -96,6 +102,199 @@ services:
       - external
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  gatelin_migration:
+    image: ghcr.io/alten-group/gatelin-migration:${GATELIN_VERSION:-latest}
+    # platform: linux/amd64 # image is only published for amd64
+    container_name: ${GATELIN_MIGRATION_HOST}
+    hostname: ${GATELIN_MIGRATION_HOST}
+    environment:
+      TZ: ${TZ}
+      LIQUIBASE_COMMAND_USERNAME: ${LIQUIBASE_DB_USER}
+      LIQUIBASE_COMMAND_PASSWORD: ${LIQUIBASE_DB_PWD}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${GATELIN_DB_NAME}
+      DB_USER: ${GATELIN_DB_USER}
+      DB_PWD: ${GATELIN_DB_PWD}
+      DB_JOB_USER: ${GATELIN_DB_JOB_USER}
+      DB_JOB_PWD: ${GATELIN_DB_JOB_PWD}
+      UPDATE: ${LIQUIBASE_UPDATE}
+      ROLLBACK: ${LIQUIBASE_ROLLBACK}
+      SNAPSHOT: snapshot/snapshot${LIQUIBASE_SNAPSHOT}
+      LIQUIBASE_LOG_LEVEL: ${LIQUIBASE_LOG_LEVEL}
+      LIQUIBASE_COMMAND_CONTEXTS: ${LIQUIBASE_COMMAND_CONTEXTS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    volumes:
+      # Megadex service/routes/permissions + CORS, applied after Gatelin core schema
+      - ${PWD}/db/liquibase/gatelin-data/:/liquibase/data
+
+  gatelin:
+    image: ghcr.io/alten-group/gatelin:${GATELIN_VERSION:-latest}
+    # platform: linux/amd64 # image is only published for amd64
+    container_name: ${GATELIN_HOST}
+    hostname: ${GATELIN_HOST}
+    environment:
+      PORT: ${DEFAULT_PORT}
+      TZ: ${TZ}
+      PWD_CHECK_URL: ${GATELIN_PWD_CHECK_URL}
+      PWD_CHALLENGES_URL: ${GATELIN_PWD_CHALLENGES_URL}
+      PWD_TRUSTED_DEVICES_URL: ${GATELIN_PWD_TRUSTED_DEVICES_URL}
+      PWD_LOGIN_TICKET_URL: ${GATELIN_PWD_LOGIN_TICKET_URL}
+      USER_SEARCH_URL: ${MEGADEX_USER_SEARCH_URL}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_NAME: ${GATELIN_DB_NAME}
+      DB_USER: ${GATELIN_DB_USER}
+      DB_PWD: ${GATELIN_DB_PWD}
+      DB_JOB_USER: ${GATELIN_DB_JOB_USER}
+      DB_JOB_PWD: ${GATELIN_DB_JOB_PWD}
+      TOKEN_SECRET: ${GATELIN_TOKEN_SECRET}
+      APP_NAME: ${APP_NAME}
+      ENV_NAME: ${ENV_NAME}
+      SERVER_SCHEME: ${SERVER_SCHEME}
+      SERVICE_NAME: ${GATELIN_HOST}
+      ACCESS_TOKEN_DURATION: ${GATELIN_ACCESS_TOKEN_DURATION}
+      REFRESH_TOKEN_DURATION: ${GATELIN_REFRESH_TOKEN_DURATION}
+      REFRESH_TOKEN_COOKIE: ${GATELIN_REFRESH_TOKEN_COOKIE}
+      REFRESH_TOKEN_COOKIE_HTTPS_ONLY: "false" # dev stack is plain HTTP
+      # Enables the bundled Gatelin admin UI (roles, permissions, CORS…)
+      ADMIN_PORT: ${GATELIN_ADMIN_PORT}
+      ADMIN_BASE_PATH: ${GATELIN_ADMIN_BASE_PATH}
+      ADMIN_SSO_TOKEN_KEY: ${ADMIN_SSO_TOKEN_KEY:-}
+      ADMIN_PASSWORD_RECOVERY_URL: ${GATELIN_ADMIN_PASSWORD_RECOVERY_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gatelin_migration:
+        condition: service_completed_successfully
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      - "traefik.http.routers.gatelin.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.gatelin.entrypoints=web"
+      - "traefik.http.routers.gatelin.service=gatelin"
+      - "traefik.http.routers.gatelin.middlewares=strip-prefix"
+      - "traefik.http.middlewares.strip-prefix.stripprefix.prefixes=/api"
+      - "traefik.http.middlewares.strip-prefix.stripprefix.forceSlash=false"
+      - "traefik.http.services.gatelin.loadBalancer.server.port=${DEFAULT_PORT}"
+      - "traefik.http.routers.gatelin-admin.rule=PathPrefix(`${GATELIN_ADMIN_BASE_PATH}`)"
+      - "traefik.http.routers.gatelin-admin.entrypoints=web"
+      - "traefik.http.routers.gatelin-admin.service=gatelin-admin"
+      - "traefik.http.services.gatelin-admin.loadBalancer.server.port=${GATELIN_ADMIN_PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/gatelin/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  foxnox_migration:
+    image: ghcr.io/alten-group/foxnox-migration:${FOXNOX_VERSION}
+    container_name: ${FOXNOX_MIGRATION_HOST}
+    hostname: ${FOXNOX_MIGRATION_HOST}
+    environment:
+      TZ: ${TZ}
+      LIQUIBASE_COMMAND_USERNAME: ${LIQUIBASE_DB_USER}
+      LIQUIBASE_COMMAND_PASSWORD: ${LIQUIBASE_DB_PWD}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${FOXNOX_DB_NAME}
+      DB_USER: ${FOXNOX_DB_USER}
+      DB_PWD: ${FOXNOX_DB_PWD}
+      DB_JOB_USER: ${FOXNOX_DB_JOB_USER}
+      DB_JOB_PWD: ${FOXNOX_DB_JOB_PWD}
+      UPDATE: ${LIQUIBASE_UPDATE}
+      ROLLBACK: ${LIQUIBASE_ROLLBACK}
+      SNAPSHOT: snapshot/snapshot${LIQUIBASE_SNAPSHOT}
+      LIQUIBASE_LOG_LEVEL: ${LIQUIBASE_LOG_LEVEL}
+      LIQUIBASE_COMMAND_CONTEXTS: ${LIQUIBASE_COMMAND_CONTEXTS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
+  mailpit:
+    image: axllent/mailpit:${MAILPIT_VERSION:-latest}
+    container_name: ${MAILPIT_HOST}
+    hostname: ${MAILPIT_HOST}
+    ports:
+      - ${MAILPIT_UI_PORT:-8025}:8025
+    networks:
+      - internal
+      - external
+    restart: unless-stopped
+
+  foxnox:
+    image: ghcr.io/alten-group/foxnox:${FOXNOX_VERSION}
+    container_name: ${FOXNOX_HOST}
+    hostname: ${FOXNOX_HOST}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      foxnox_migration:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${DEFAULT_PORT}
+      TZ: ${TZ}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_NAME: ${FOXNOX_DB_NAME}
+      DB_USER: ${FOXNOX_DB_USER}
+      DB_PWD: ${FOXNOX_DB_PWD}
+      DB_JOB_USER: ${FOXNOX_DB_JOB_USER}
+      DB_JOB_PWD: ${FOXNOX_DB_JOB_PWD}
+      PWD_SECRET: ${FOXNOX_PWD_SECRET}
+      APP_NAME: ${APP_NAME}
+      ENV_NAME: ${ENV_NAME}
+      SERVER_SCHEME: ${SERVER_SCHEME}
+      SERVICE_NAME: ${FOXNOX_HOST}
+      ACCESS_TOKEN_DURATION: ${FOXNOX_ACCESS_TOKEN_DURATION}
+      REFRESH_TOKEN_DURATION: ${FOXNOX_REFRESH_TOKEN_DURATION}
+      WEB_PUBLIC_BASE: ${WEB_PUBLIC_BASE:-/api/foxnox/web}
+      WEB_PUBLIC_ORIGIN: ${WEB_PUBLIC_ORIGIN:-${SERVER_SCHEME}${SERVER_URL}:${TRAEFIK_PORT}}
+      WEB_LOGIN_RESUME_URL: ${WEB_LOGIN_RESUME_URL:-${SERVER_SCHEME}${SERVER_URL}:${TRAEFIK_PORT}/megadex/login}
+      USER_SEARCH_URL: ${MEGADEX_USER_SEARCH_URL}
+      SMTP_HOST: ${SMTP_HOST:-${MAILPIT_HOST}}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_FROM: ${SMTP_FROM:-Megadex <noreply@localhost>}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      # The published image runs NODE_ENV=production, where Foxnox validates
+      # ADMIN_PORT at boot and refuses to start without it.
+      ADMIN_PORT: ${FOXNOX_ADMIN_PORT}
+      ADMIN_BASE_PATH: ${FOXNOX_ADMIN_BASE_PATH:-/foxnox}
+      ADMIN_SSO_TOKEN_KEY: ${ADMIN_SSO_TOKEN_KEY:-}
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      # More specific than Gatelin's PathPrefix(`/api`) so /api/foxnox/* (password
+      # workflow pages) hits Foxnox.
+      - "traefik.http.routers.foxnox.rule=PathPrefix(`/api/foxnox`)"
+      - "traefik.http.routers.foxnox.priority=100"
+      - "traefik.http.routers.foxnox.entrypoints=web"
+      - "traefik.http.routers.foxnox.service=foxnox"
+      - "traefik.http.routers.foxnox.middlewares=strip-prefix"
+      - "traefik.http.services.foxnox.loadbalancer.server.port=${DEFAULT_PORT}"
+      - "traefik.http.routers.foxnox-admin.rule=PathPrefix(`${FOXNOX_ADMIN_BASE_PATH:-/foxnox}`)"
+      - "traefik.http.routers.foxnox-admin.entrypoints=web"
+      - "traefik.http.routers.foxnox-admin.service=foxnox-admin"
+      - "traefik.http.services.foxnox-admin.loadbalancer.server.port=${FOXNOX_ADMIN_PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/foxnox/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   megadex_migration:
     build:
@@ -162,7 +361,11 @@ services:
       SERVER_SCHEME: ${SERVER_SCHEME}
       SERVICE_NAME: ${MEGADEX_HOST}
     networks:
-      - internal
+      internal:
+        # Gatelin's core seed proxies /api/users/* to `${APP_NAME}-ms-user-mock-${ENV_NAME}`
+        # (service `ms-user-mock`): Megadex serves those /users/* routes.
+        aliases:
+          - ${APP_NAME}-ms-user-mock-${ENV_NAME}
     volumes:
       - ${PWD}/src:/usr/src/app/src
       - ${PWD}/tests:/usr/src/app/tests
@@ -170,17 +373,8 @@ services:
       - ${PWD}/babel.config.json:/usr/src/app/babel.config.json
       - ${PWD}/package.json:/usr/src/app/package.json
       - megadex_node_modules:/usr/src/app/node_modules
-    # No Gatelin in this stack: Traefik exposes /api/megadex directly (prefix stripped).
-    labels:
-      - "traefik.enable=true"
-      - "stack.name=${STACK_NAME}"
-      - "traefik.http.routers.megadex.rule=PathPrefix(`/api/megadex`)"
-      - "traefik.http.routers.megadex.entrypoints=web"
-      - "traefik.http.routers.megadex.service=megadex"
-      - "traefik.http.routers.megadex.middlewares=strip-prefix"
-      - "traefik.http.middlewares.strip-prefix.stripprefix.prefixes=/api"
-      - "traefik.http.middlewares.strip-prefix.stripprefix.forceSlash=false"
-      - "traefik.http.services.megadex.loadBalancer.server.port=${DEFAULT_PORT}"
+    # No public Traefik router: Megadex sits behind Gatelin (Traefik /api -> Gatelin ->
+    # megadex), which authenticates the caller and injects the x-consumer-* headers.
     healthcheck: *healthcheck
 
   admin:
@@ -239,6 +433,7 @@ services:
     depends_on:
       - admin
       - megadex
+      - gatelin
       - traefik
     volumes:
       - ${PWD}/admin/e2e:/repo/admin/e2e:ro
