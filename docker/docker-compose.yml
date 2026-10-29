@@ -443,6 +443,35 @@ services:
       - ${PWD}/admin/test-results:/repo/admin/test-results
       - ${PWD}/admin/playwright-report:/repo/admin/playwright-report
 
+  swagger:
+    build:
+      context: ${PWD}/swagger
+      dockerfile: dockerfile
+      args:
+        UID: ${UID}
+        GID: ${GID}
+        TZ: ${TZ}
+        NODE_VERSION: ${NODE_VERSION}
+        NODE_ENV: ${NODE_ENV}
+    container_name: ${SWAGGER_HOST}
+    hostname: ${SWAGGER_HOST}
+    environment:
+      SERVICE_NAME: ${SWAGGER_HOST}
+      PORT: ${DEFAULT_PORT}
+      BASE_PATH: /swagger
+    volumes:
+      - ${PWD}/swagger/src:/usr/src/app/src
+      - swagger_node_modules:/usr/src/app/node_modules
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      - "traefik.http.routers.swagger.rule=PathPrefix(`/swagger`)"
+      - "traefik.http.routers.swagger.entrypoints=web"
+      - "traefik.http.routers.swagger.service=swagger"
+      - "traefik.http.services.swagger.loadbalancer.server.port=${DEFAULT_PORT}"
+
   adminer:
     image: ${ADMINER_VERSION}
     container_name: ${ADMINER_HOST}
@@ -495,3 +524,4 @@ volumes:
       type: none
       o: bind
       device: ${PWD}/admin/node_modules
+  swagger_node_modules:

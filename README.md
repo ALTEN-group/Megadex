@@ -52,6 +52,7 @@ bash scripts/start-dev.sh
 #    Megadex admin: http://localhost:8100/megadex/
 #    Gatelin admin: http://localhost:8100/gatelin/  (roles, permissions, CORS)
 #    Foxnox admin:  http://localhost:8100/foxnox/   (password policies)
+#    Swagger:       http://localhost:8100/swagger/
 #    Mailpit:       http://localhost:8025/
 
 # 4. Optional: run the admin e2e suite

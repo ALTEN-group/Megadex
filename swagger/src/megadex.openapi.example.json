@@ -1,0 +1,2009 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "version": "1.0.0",
+    "title": "Megadex — user profile, preferences and reference data",
+    "description": "Megadex API, reached through Gatelin (Traefik `/api` → Gatelin → megadex), which authenticates the caller and injects the `x-consumer-*` headers.\n\n**How to try it.** Call `POST /gatelin/sessions` with a dev user, then click **Authorize** and paste the `accessToken`.\n\n**Dev credentials.** The `__EMAIL_<userId>__` / `__PWD_<userId>__` placeholders are replaced by `scripts/setup-mocks.sh` after it seeds the dev users' passwords in Foxnox. If you still see literal placeholders, run `scripts/setup-mocks.sh`."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8100/api",
+      "description": "Local dev stack (via Traefik → Gatelin)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Session",
+      "description": "Gatelin login. Call it first, then click **Authorize** and paste the `accessToken`."
+    },
+    {
+      "name": "User",
+      "description": "Megadex users (`/megadex/users`)."
+    },
+    {
+      "name": "Preference",
+      "description": "Megadex preferences (`/megadex/preferences`)."
+    },
+    {
+      "name": "Social",
+      "description": "Megadex social networks (`/megadex/socials`)."
+    },
+    {
+      "name": "Lookup",
+      "description": "Translated reference data (read-only)."
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "idPath": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1
+        },
+        "description": "Row primary key"
+      }
+    },
+    "schemas": {
+      "user": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "M",
+              "F"
+            ],
+            "nullable": true
+          },
+          "civility": {
+            "type": "string",
+            "enum": [
+              "Mr.",
+              "Mrs.",
+              "Ms."
+            ],
+            "nullable": true
+          },
+          "firstName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "middleName": {
+            "type": "string",
+            "maxLength": 50,
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "nickname": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 50
+          },
+          "backupEmail": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 50,
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "zipCode": {
+            "type": "string",
+            "maxLength": 10,
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 50,
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO 3166-1 alpha-3",
+            "example": "FRA",
+            "nullable": true
+          },
+          "nationality": {
+            "type": "string",
+            "description": "ISO 3166-1 alpha-3",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true
+          },
+          "birthdate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "portrait": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "ar",
+              "de",
+              "en",
+              "es",
+              "fr",
+              "it",
+              "ja",
+              "nl",
+              "pt",
+              "zh"
+            ],
+            "default": "en"
+          },
+          "job": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "company": {
+            "type": "string",
+            "maxLength": 50,
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "facebook": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "instagram": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "x": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "linkedIn": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "youTube": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "tikTok": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "gitHub": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "pinterest": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "discord": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "reddit": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "twitch": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "gdprConsentedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "marketingConsentedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "active": {
+            "type": "boolean",
+            "default": false
+          },
+          "archived": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "Gatelin role ids",
+            "example": [
+              1
+            ]
+          }
+        }
+      },
+      "preference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "component": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "conf": {
+            "type": "object"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": false
+          },
+          "archived": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          }
+        }
+      },
+      "social": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          }
+        }
+      },
+      "countryTrans": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "FRA"
+          },
+          "lang": {
+            "type": "string",
+            "example": "fr"
+          },
+          "trans": {
+            "type": "string",
+            "example": "France"
+          },
+          "nationality": {
+            "type": "string",
+            "example": "Français"
+          }
+        }
+      },
+      "civilityTrans": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "Mr."
+          },
+          "lang": {
+            "type": "string",
+            "example": "fr"
+          },
+          "trans": {
+            "type": "string",
+            "example": "Monsieur"
+          },
+          "abbr": {
+            "type": "string",
+            "example": "M."
+          }
+        }
+      },
+      "genderTrans": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "M"
+          },
+          "lang": {
+            "type": "string",
+            "example": "fr"
+          },
+          "trans": {
+            "type": "string",
+            "example": "Masculin"
+          },
+          "abbr": {
+            "type": "string",
+            "example": "M"
+          }
+        }
+      },
+      "rowsRequest": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "searchRequest": {
+        "type": "object",
+        "description": "Common body for every `POST /<entity>/search` route. All fields optional. `filters` is a per-column map: `{ <column>: { value, matchMode } }`.",
+        "properties": {
+          "pagination": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, the response includes `total` = matching row count (before pagination)"
+          },
+          "first": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "default": 0,
+            "description": "Offset (rows to skip)"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "default": 10,
+            "description": "Page size"
+          },
+          "sortField": {
+            "type": "string",
+            "default": "id"
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": [
+              "ASC",
+              "DESC"
+            ],
+            "default": "ASC"
+          },
+          "filters": {
+            "type": "object",
+            "description": "Map of column name to filter clause. See `antity-pgsql` for the full matchMode grammar.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "value": {},
+                "matchMode": {
+                  "type": "string",
+                  "enum": [
+                    "=",
+                    "<",
+                    ">",
+                    "<=",
+                    ">=",
+                    "<>",
+                    "IS",
+                    "IS NOT",
+                    "IN",
+                    "NOT IN",
+                    "LIKE",
+                    "NOT LIKE",
+                    "startsWith",
+                    "endsWith",
+                    "contains",
+                    "notContains",
+                    "equals",
+                    "notEquals",
+                    "between",
+                    "in",
+                    "notIn",
+                    "lt",
+                    "lte",
+                    "gt",
+                    "gte",
+                    "before",
+                    "after"
+                  ]
+                }
+              },
+              "required": [
+                "value"
+              ]
+            },
+            "example": {
+              "userId": {
+                "value": 1,
+                "matchMode": "="
+              }
+            }
+          }
+        }
+      },
+      "archiveRequest": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 1
+                }
+              }
+            },
+            "example": [
+              {
+                "id": 1
+              },
+              {
+                "id": 2
+              }
+            ]
+          }
+        }
+      },
+      "historyEntry": {
+        "type": "object",
+        "description": "Grouped `log.history` rows for one action (see src/middlewares/history.js).",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "tstamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "INSERT",
+              "UPDATE",
+              "DELETE"
+            ]
+          },
+          "consumerId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "consumerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "record": {
+            "type": "object",
+            "description": "JSON snapshot of the affected row"
+          }
+        }
+      },
+      "errorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "details": {
+            "type": "string",
+            "example": "Invalid request parameters"
+          }
+        }
+      },
+      "entityProperty": {
+        "type": "object",
+        "description": "One row of the metadata returned by `GET /<entity>/schema`. Private properties are filtered out at that endpoint.",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "userId"
+          },
+          "type": {
+            "type": "string",
+            "example": "integer"
+          },
+          "min": {
+            "type": "integer",
+            "nullable": true
+          },
+          "max": {
+            "type": "integer",
+            "nullable": true
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "SELECT",
+              "INSERT"
+            ]
+          },
+          "requiredFor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "POST"
+            ]
+          },
+          "isFilterable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "entitySchemaResponse": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/entityProperty"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "sessionRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "pwd"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "pwd": {
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "sessionResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Paste it in **Authorize** (bearer)"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "me": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "firstName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "nickname": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 50
+          },
+          "active": {
+            "type": "boolean",
+            "default": false
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "Gatelin role ids",
+            "example": [
+              1
+            ]
+          }
+        }
+      }
+    },
+    "responses": {
+      "badRequestError": {
+        "description": "Missing or invalid parameters in body / path / query",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/errorResponse"
+            }
+          }
+        }
+      },
+      "unauthorizedError": {
+        "description": "Password mismatch or missing/invalid access token",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/errorResponse"
+            }
+          }
+        }
+      },
+      "notFoundError": {
+        "description": "No matching row",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/errorResponse"
+            }
+          }
+        }
+      },
+      "unexpectedError": {
+        "description": "Unexpected server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/errorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/gatelin/sessions": {
+      "post": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Log in (Gatelin) and get an access token",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sessionRequest"
+              },
+              "examples": {
+                "user2": {
+                  "summary": "Dev user (userId 2)",
+                  "value": {
+                    "email": "__EMAIL_2__",
+                    "pwd": "__PWD_2__"
+                  }
+                },
+                "user3": {
+                  "summary": "Dev user (userId 3)",
+                  "value": {
+                    "email": "__EMAIL_3__",
+                    "pwd": "__PWD_3__"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session opened",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/users/users/me": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Authenticated user basics (used by the admin)",
+        "responses": {
+          "200": {
+            "description": "Current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/me"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/users/search": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Search users",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/searchRequest"
+              },
+              "example": {
+                "first": 0,
+                "limit": 10
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Matching users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/user"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/users": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Add users",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/rowsRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "firstName": "Ada",
+                    "lastName": "Lovelace",
+                    "nickname": "ada",
+                    "email": "ada@example.com",
+                    "country": "GBR",
+                    "roles": [
+                      2
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/user"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Update users",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/rowsRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "id": 2,
+                    "city": "Toulouse"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/user"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          }
+        }
+      }
+    },
+    "/megadex/users/archive": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Archive users by id",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/archiveRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "id": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Archived rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          }
+        }
+      }
+    },
+    "/megadex/users/schema": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Get user entity schema",
+        "responses": {
+          "200": {
+            "description": "Entity properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/entitySchemaResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/users/{id}/history": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Get the change history of a user",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/idPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/historyEntry"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/preferences/search": {
+      "post": {
+        "tags": [
+          "Preference"
+        ],
+        "summary": "Search preferences",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/searchRequest"
+              },
+              "example": {
+                "first": 0,
+                "limit": 10
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Matching preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/preference"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/preferences": {
+      "post": {
+        "tags": [
+          "Preference"
+        ],
+        "summary": "Add preferences",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/rowsRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "name": "Default",
+                    "component": "users",
+                    "conf": {
+                      "columns": [
+                        "id",
+                        "email"
+                      ]
+                    },
+                    "isActive": true
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/preference"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Preference"
+        ],
+        "summary": "Update preferences",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/rowsRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "id": 1,
+                    "name": "Compact"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/preference"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          }
+        }
+      }
+    },
+    "/megadex/preferences/archive": {
+      "post": {
+        "tags": [
+          "Preference"
+        ],
+        "summary": "Archive preferences by id",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/archiveRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "id": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Archived rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          }
+        }
+      }
+    },
+    "/megadex/preferences/schema": {
+      "get": {
+        "tags": [
+          "Preference"
+        ],
+        "summary": "Get preference entity schema",
+        "responses": {
+          "200": {
+            "description": "Entity properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/entitySchemaResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/preferences/{id}/history": {
+      "get": {
+        "tags": [
+          "Preference"
+        ],
+        "summary": "Get the change history of a preference",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/idPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/historyEntry"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/socials/search": {
+      "post": {
+        "tags": [
+          "Social"
+        ],
+        "summary": "Search social networks",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/searchRequest"
+              },
+              "example": {
+                "first": 0,
+                "limit": 10
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Matching social networks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/social"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/socials": {
+      "post": {
+        "tags": [
+          "Social"
+        ],
+        "summary": "Add social networks",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/rowsRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "name": "Mastodon",
+                    "url": "https://joinmastodon.org"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created social networks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/social"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Social"
+        ],
+        "summary": "Update social networks",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/rowsRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "id": 1,
+                    "url": "https://www.facebook.com"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated social networks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/social"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          }
+        }
+      }
+    },
+    "/megadex/socials/archive": {
+      "post": {
+        "tags": [
+          "Social"
+        ],
+        "summary": "Archive social networks by id",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/archiveRequest"
+              },
+              "example": {
+                "rows": [
+                  {
+                    "id": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Archived rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          }
+        }
+      }
+    },
+    "/megadex/socials/schema": {
+      "get": {
+        "tags": [
+          "Social"
+        ],
+        "summary": "Get social entity schema",
+        "responses": {
+          "200": {
+            "description": "Entity properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/entitySchemaResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/socials/{id}/history": {
+      "get": {
+        "tags": [
+          "Social"
+        ],
+        "summary": "Get the change history of a social",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/idPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/historyEntry"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notFoundError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/countries/search": {
+      "post": {
+        "tags": [
+          "Lookup"
+        ],
+        "summary": "Search countries",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/searchRequest"
+              },
+              "example": {
+                "filters": {
+                  "lang": {
+                    "value": "fr",
+                    "matchMode": "="
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Matching countries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/countryTrans"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/countries/schema": {
+      "get": {
+        "tags": [
+          "Lookup"
+        ],
+        "summary": "Get countries entity schema",
+        "responses": {
+          "200": {
+            "description": "Entity properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/entitySchemaResponse"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/civilities/search": {
+      "post": {
+        "tags": [
+          "Lookup"
+        ],
+        "summary": "Search civilities",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/searchRequest"
+              },
+              "example": {
+                "filters": {
+                  "lang": {
+                    "value": "fr",
+                    "matchMode": "="
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Matching civilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/civilityTrans"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/civilities/schema": {
+      "get": {
+        "tags": [
+          "Lookup"
+        ],
+        "summary": "Get civilities entity schema",
+        "responses": {
+          "200": {
+            "description": "Entity properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/entitySchemaResponse"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/genders/search": {
+      "post": {
+        "tags": [
+          "Lookup"
+        ],
+        "summary": "Search genders",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/searchRequest"
+              },
+              "example": {
+                "filters": {
+                  "lang": {
+                    "value": "fr",
+                    "matchMode": "="
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Matching genders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/genderTrans"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/genders/schema": {
+      "get": {
+        "tags": [
+          "Lookup"
+        ],
+        "summary": "Get genders entity schema",
+        "responses": {
+          "200": {
+            "description": "Entity properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/entitySchemaResponse"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    }
+  }
+}

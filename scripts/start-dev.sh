@@ -13,6 +13,13 @@ NC='\033[0m' # No Color
 
 echo -e "${YELLOW}🚀 Starting development environment...${NC}"
 
+# The swagger container hard-`require`s megadex.openapi.json at boot. Stub it from the
+# checked-in example on first run so start-dev succeeds before setup-mocks.sh has run.
+# setup-mocks.sh regenerates it with real credentials and restarts swagger.
+if [[ ! -f swagger/src/megadex.openapi.json ]]; then
+  cp swagger/src/megadex.openapi.example.json swagger/src/megadex.openapi.json
+fi
+
 # Ensure bind-mount directories exist before Docker tries to mount them
 mkdir -p node_modules admin/node_modules
 
