@@ -45,5 +45,9 @@ export default new SQLEntity("users", [
   p("active", "boolean", rw),
   p("archived", "boolean", ro),
   p("archivedAt", "date", ro),
+  p("createdAt", "date", ro),
+  p("creatorName", "string", ro),
+  p("updatedAt", "date", ro),
+  p("updaterName", "string", ro),
   p("rolesArrayAgg", "array", rw, { privateField: true }),
 ]);

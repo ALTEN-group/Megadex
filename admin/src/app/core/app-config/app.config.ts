@@ -93,8 +93,9 @@ export function provideAppConfig() {
             id: r.id,
             tstamp: r.tstamp,
             operation: r.operation,
-            updaterId: r.userId,
-            updaterName: r.userName,
+            // Megadex history rows carry the acting consumer (src/middlewares/history.js)
+            updaterId: r.consumerId,
+            updaterName: r.consumerName,
             record,
           };
         };

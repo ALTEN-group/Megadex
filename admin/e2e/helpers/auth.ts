@@ -35,6 +35,8 @@ export async function logout(page: Page): Promise<void> {
 
 const ENTITY_LINKS: Record<string, { label: RegExp; parent?: RegExp }> = {
   home: { label: /Accueil/ },
+  users: { label: /Users/ },
+  socials: { label: /Social networks/ },
 };
 
 /**

@@ -264,6 +264,28 @@
             "nullable": true,
             "readOnly": true
           },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "creatorName": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "updaterName": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
           "roles": {
             "type": "array",
             "items": {
@@ -336,6 +358,28 @@
           "archivedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "creatorName": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "updaterName": {
+            "type": "string",
             "nullable": true,
             "readOnly": true
           }

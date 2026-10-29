@@ -10,4 +10,8 @@ export default new SQLEntity("social", [
   p("url", "string", rw, { max: 255 }),
   p("archived", "boolean", ["SELECT"]),
   p("archivedAt", "date", ["SELECT"]),
+  p("createdAt", "date", ["SELECT"]),
+  p("creatorName", "string", ["SELECT"]),
+  p("updatedAt", "date", ["SELECT"]),
+  p("updaterName", "string", ["SELECT"]),
 ]);
