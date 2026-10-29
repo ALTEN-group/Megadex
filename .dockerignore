@@ -13,3 +13,6 @@ test/
 *.spec.js
 .github/
 docs/
+admin/node_modules
+admin/dist
+admin/.angular

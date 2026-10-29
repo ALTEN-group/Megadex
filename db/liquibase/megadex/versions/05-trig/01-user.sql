@@ -1,0 +1,7 @@
+CREATE TRIGGER users_iud_trigger
+  INSTEAD OF INSERT OR UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION iud_user();
+
+CREATE TRIGGER user_history_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON "user"
+  FOR EACH ROW EXECUTE FUNCTION change_trigger();

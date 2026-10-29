@@ -1,69 +1,54 @@
-
 ```mermaid
 ---
-caption: Views Entity Relationship Diagram 
+caption: Views Entity Relationship Diagram
 ---
 
 erDiagram
 
-  routes["routes VIEW"] {
+  users["users VIEW"] {
     int id
-    int serviceId
-    varchar serviceName
-    int resourceId
-    varchar resourceName
-    int[] operations "array of operation IDs"
-    text operationName "comma-separated operation names"
-    varchar pattern "route pattern"
-    text url "COMPUTED: /service.pattern/resource.name/route.pattern"
-    varchar name
-    varchar description
-    int[] methodIds "array of method IDs"
-    text[] methodNames "array of method names"
-    boolean isProtected
-    boolean locked
+    gender gender
+    civility civility
+    string firstName
+    string middleName
+    string lastName
+    string nickname
+    string email
+    string backupEmail
+    string address
+    string zipCode
+    string city
+    country country
+    country nationality
+    string phone
+    date birthdate
+    string portrait
+    language language
+    string job
+    string company
+    string website
+    string facebook
+    string instagram
+    string x
+    string linkedIn
+    string youTube
+    string tikTok
+    string gitHub
+    string pinterest
+    string discord
+    string reddit
+    string twitch
+    timestamptz gdprConsentedAt
+    timestamptz marketingConsentedAt
+    boolean active
     boolean archived
-    timestamp createdAt
+    timestamptz archivedAt
+    timestamptz createdAt
     int creatorId
-    varchar creatorName
-    timestamp updatedAt
+    string creatorName
+    timestamptz updatedAt
     int updaterId
-    varchar updaterName
-  }
-
-  resources["resources VIEW"] {
-    int id
-    int serviceId
-    varchar serviceName
-    varchar name
-    boolean locked
-    boolean archived
-    timestamp createdAt
-    int creatorId
-    varchar creatorName
-    timestamp updatedAt
-    int updaterId
-    varchar updaterName
-  }
-
-  permissions["permissions VIEW"] {
-    int[] ids "array of permission IDs (one per operation)"
-    int roleId
-    int serviceId
-    varchar serviceName
-    int resourceId
-    varchar resourceName
-    int routeId
-    varchar routeName
-    int[] operationId "array of operation IDs"
-    text[] operationName "array of operation names"
-    text[] fields
-    text[] scopes
-  }
-
-  role_cache["role_cache VIEW"] {
-    int id
-    boolean archived
-    jsonb permissions "array of route permission objects"
+    string updaterName
+    int[] rolesArrayAgg "user_role.roleId, writable (INSTEAD OF iud_user)"
   }
 ```

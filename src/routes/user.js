@@ -52,7 +52,7 @@ router.get("/schema", requireIdentity, schema.get(userEnt));
 router.get(
   "/:id/history",
   requireIdentity,
-  history.get(["users", "user_role"]),
+  history.get(["user", "user_role"]),
 );
 
 export default router;

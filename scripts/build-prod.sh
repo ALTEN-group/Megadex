@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Build Production Docker Images Script
+# Builds all production-ready images using dockerfile.prod files and docker/conf/.env.prod
+# Usage: ./scripts/build-prod.sh [api] [migration]
+#   With no arguments, all images are built.
+#   The Angular admin UI is built into the API image.
+#   `gateway` is still accepted as an alias of `api`.
+#   Documentation is published to GitHub Pages, not as a Docker image.
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+ENV_FILE="docker/conf/.env.prod"
+
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo -e "${RED}❌ $ENV_FILE not found. Cannot build production images.${NC}"
+  exit 1
+fi
+
+# Load env vars (avoid sourcing to prevent readonly variable conflicts)
+get_env() { grep -E "^${1}=" "$ENV_FILE" | cut -d'=' -f2-; }
+
+NODE_VERSION=$(get_env NODE_VERSION)
+NODE_ENV=$(get_env NODE_ENV)
+TZ=$(get_env TZ)
+APP_UID=$(get_env UID)
+APP_GID=$(get_env GID)
+LIQUIBASE_VERSION=$(get_env LIQUIBASE_VERSION)
+
+# Read version from package.json
+VERSION=$(node -p "require('./package.json').version")
+
+# Determine which targets to build (default: all)
+BUILD_API=false
+BUILD_MIGRATION=false
+
+if [[ $# -eq 0 ]]; then
+  BUILD_API=true
+  BUILD_MIGRATION=true
+else
+  for arg in "$@"; do
+    case "$arg" in
+      api|gateway) BUILD_API=true ;;
+      migration)   BUILD_MIGRATION=true ;;
+      *) echo -e "${RED}❌ Unknown target: $arg (valid: api, migration)${NC}"; exit 1 ;;
+    esac
+  done
+fi
+
+echo -e "${BLUE}🔖 Version: ${VERSION}${NC}"
+
+# ─── API ────────────────────────────────────────────────────────────────────
+if [[ "$BUILD_API" == true ]]; then
+  IMAGE="ghcr.io/dwtechs/megadex:${VERSION}"
+  echo -e "${YELLOW}🏗️  Building api image ${IMAGE}...${NC}"
+  docker build \
+    --file dockerfile.prod \
+    --build-arg NODE_VERSION="${NODE_VERSION}" \
+    --build-arg NODE_ENV="${NODE_ENV}" \
+    --build-arg TZ="${TZ}" \
+    --build-arg UID="${APP_UID}" \
+    --build-arg GID="${APP_GID}" \
+    --tag "${IMAGE}" \
+    --tag "ghcr.io/dwtechs/megadex:latest" \
+    .
+  echo -e "${GREEN}✅ API image built: ${IMAGE}${NC}"
+fi
+
+# ─── Migration ──────────────────────────────────────────────────────────────
+if [[ "$BUILD_MIGRATION" == true ]]; then
+  IMAGE="ghcr.io/dwtechs/megadex-migration:${VERSION}"
+  echo -e "${YELLOW}🏗️  Building migration image ${IMAGE}...${NC}"
+  docker build \
+    --file db/liquibase/dockerfile.prod \
+    --build-arg LIQUIBASE_VERSION="${LIQUIBASE_VERSION}" \
+    --tag "${IMAGE}" \
+    --tag "ghcr.io/dwtechs/megadex-migration:latest" \
+    db/liquibase
+  echo -e "${GREEN}✅ Migration image built: ${IMAGE}${NC}"
+fi
+
+echo -e "${GREEN}✅ All requested images built successfully.${NC}"

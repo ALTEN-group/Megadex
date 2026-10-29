@@ -1,0 +1,73 @@
+{
+  "name": "admin",
+  "version": "0.1.0-alpha.4",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve --host 0.0.0.0 --port 4200 --poll=2000",
+    "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "test": "ng test",
+    "test:ci": "ng test --no-watch --coverage",
+    "test:coverage": "ng test --no-watch --coverage",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:install": "playwright install chromium"
+  },
+  "private": true,
+  "author": "ALTEN",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DWTechs/megadex.git",
+    "directory": "admin"
+  },
+  "bugs": {
+    "url": "https://github.com/DWTechs/megadex/issues"
+  },
+  "homepage": "https://github.com/DWTechs/megadex#readme",
+  "dependencies": {
+    "@angular/animations": "22.1.8",
+    "@angular/cdk": "22.1.8",
+    "@angular/common": "22.1.8",
+    "@angular/core": "22.1.8",
+    "@angular/forms": "22.1.8",
+    "@angular/localize": "22.1.8",
+    "@angular/platform-browser": "22.1.8",
+    "@angular/platform-browser-dynamic": "22.1.8",
+    "@angular/router": "22.1.8",
+    "@angular/service-worker": "22.1.8",
+    "@dwtechs/checkard": "3.7.0",
+    "@dwtechs/ctrltab": "3.0.1",
+    "@dwtechs/ngx-crud-builder": "0.3.4",
+    "@lcluber/frameratjs": "1.1.0",
+    "@lcluber/mouettejs": "2.5.0",
+    "@lcluber/roostrjs": "0.6.0",
+    "@openng/icons": "1.0.0",
+    "@openng/optimus-ui": "2.0.2",
+    "@openng/optimus-ui-themes": "1.0.1",
+    "core-js": "3.26.1",
+    "file-saver": "2.0.5",
+    "rxjs": "7.8.2",
+    "tslib": "2.5.3",
+    "typescript": "6.0.3"
+  },
+  "devDependencies": {
+    "@angular/build": "22.1.8",
+    "@angular/cli": "22.1.8",
+    "@angular/compiler": "22.1.8",
+    "@angular/compiler-cli": "22.1.8",
+    "@angular/language-service": "22.1.8",
+    "@playwright/test": "^1.62.1",
+    "@types/chart.js": "2.9.37",
+    "@types/file-saver": "2.0.7",
+    "@types/node": "20.19.17",
+    "@vitest/coverage-v8": "4.1.11",
+    "jsdom": "^30.0.1",
+    "ts-node": "10.9.1",
+    "vitest": "4.1.11",
+    "zone.js": "0.15.1"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  }
+}
