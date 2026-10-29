@@ -51,9 +51,8 @@ sedi \
   "$ENV_FILE"
 
 # Load registry vars from the generated env file
-set +e
-source "$ENV_FILE" 2>/dev/null
-set -e
+source "$(dirname "${BASH_SOURCE[0]}")/lib/load-env.sh"
+load_env_file "$ENV_FILE"
 
 # Build NPMRC only with non-empty values (no deprecated fields)
 NPMRC_CONTENT=""

@@ -51,14 +51,8 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 # Load container names + postgres credentials from .env.dev.
-# source <(...) process substitution failed to export vars here, so use a real temp file instead.
-ENV_TMP=$(mktemp)
-grep -v '^#' "$ENV_FILE" | grep -v '^UID=' > "$ENV_TMP"
-set -a
-# shellcheck disable=SC1090
-source "$ENV_TMP"
-set +a
-rm -f "$ENV_TMP"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/load-env.sh"
+load_env_file "$ENV_FILE"
 
 : "${FOXNOX_HOST:?FOXNOX_HOST missing from $ENV_FILE}"
 : "${POSTGRES_HOST:?POSTGRES_HOST missing from $ENV_FILE}"
