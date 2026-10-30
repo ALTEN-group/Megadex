@@ -18,9 +18,3 @@ CREATE TRIGGER preferences_iud_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON "preferences"
 FOR EACH ROW
 EXECUTE PROCEDURE iud_preference();
-
--- -- Apply history trigger to preference table
--- CREATE TRIGGER preference_history_trigger
--- AFTER INSERT OR UPDATE OR DELETE ON "preference"
--- FOR EACH ROW
--- EXECUTE PROCEDURE change_trigger();

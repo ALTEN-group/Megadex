@@ -1,7 +1,7 @@
-ARG LIQUIBASE_VERSION
+ARG LIQUIBASE_VERSION=4.28.0-alpine
 FROM liquibase/liquibase:${LIQUIBASE_VERSION}
 
-LABEL org.opencontainers.image.description="Gatelin database migrations (Liquibase, development)"
+LABEL org.opencontainers.image.description="Megadex database migrations (Liquibase, development)"
 
 USER root
 

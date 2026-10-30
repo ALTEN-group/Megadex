@@ -1,6 +1,7 @@
 // @ts-check
 import { failFast, listen } from "@dwtechs/servpico-express";
 import app from "./app.js";
+import { validateEnv } from "./conf/env.js";
 import { startDeleteArchivedEntitiesJob } from "./jobs/delete-archived-entities.js";
 import { startDeleteOldHistoryJob } from "./jobs/delete-old-history.js";
 
@@ -14,6 +15,7 @@ process.on("uncaughtException", (err) => {
 });
 
 Promise.resolve()
+  .then(validateEnv)
   .then(() => {
     startDeleteArchivedEntitiesJob();
     startDeleteOldHistoryJob();

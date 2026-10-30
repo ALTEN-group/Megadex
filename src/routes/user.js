@@ -33,9 +33,19 @@ router.get("/me", requireIdentity, async (_req, res, next) => {
   }
 });
 
+function stampConsumer(req, res, next) {
+  const { userId, nickname } = res.locals.consumer ?? {};
+  for (const row of req.body?.rows ?? []) {
+    row.consumerId = userId;
+    row.consumerName = nickname;
+  }
+  next();
+}
+
 router.post(
   "/",
   requireIdentity,
+  stampConsumer,
   rolesToDatabase,
   userEnt.addArraySubstack,
   rolesToApi,
@@ -43,6 +53,7 @@ router.post(
 router.put(
   "/",
   requireIdentity,
+  stampConsumer,
   rolesToDatabase,
   userEnt.updateArraySubstack,
   rolesToApi,

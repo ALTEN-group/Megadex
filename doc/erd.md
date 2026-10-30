@@ -6,7 +6,10 @@ caption: Diagramme entité-relation de ms_user
 erDiagram
   
   user ||--o{ preference : "userId"
+  preference ||--o{ preference_selection : "preferenceId"
   user ||--o{ history : "userId"
+  user ||--o{ user_social : "userId"
+  social ||--o{ user_social : "socialId"
 
   user {
     int id
@@ -31,17 +34,6 @@ erDiagram
     string job
     string company
     string website
-    string facebook
-    string instagram
-    string x
-    string linkedIn
-    string youTube
-    string tikTok
-    string gitHub
-    string pinterest
-    string discord
-    string reddit
-    string twitch
     time emailConfirmedAt
     time passwordUpdatedAt
     boolean active
@@ -52,11 +44,21 @@ erDiagram
   preference {
     int id
     int userId
+    string resourceName
     string name
-    string component
     jsonb conf
-    boolean archived
-    time archivedAt
+    time createdAt
+    int creatorId
+    string creatorName
+    time updatedAt
+    int updaterId
+    string updaterName
+  }
+
+  preference_selection {
+    int userId
+    string resourceName
+    int preferenceId
   }
 
   country_trans {
@@ -84,6 +86,12 @@ erDiagram
     string url
     boolean archived
     time archivedAt
+  }
+
+  user_social {
+    int userId
+    int socialId
+    string handle
   }
 
   history {

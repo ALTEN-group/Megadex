@@ -4,16 +4,23 @@ import { property as p } from "./property.js";
 
 const rw = ["SELECT", "INSERT", "UPDATE"];
 
-export default new SQLEntity("preference", [
+export default new SQLEntity("preferences", [
   p("id", "integer", ["SELECT"]),
   p("userId", "integer", ["SELECT", "INSERT"], {
     requiredFor: ["POST"],
     privateField: true,
   }),
-  p("name", "string", rw, { requiredFor: ["POST"], min: 1, max: 50 }),
-  p("component", "string", rw, { requiredFor: ["POST"], min: 1, max: 50 }),
+  p("resourceName", "string", ["SELECT", "INSERT"], {
+    requiredFor: ["POST"],
+    min: 1,
+    max: 20,
+  }),
+  p("name", "string", rw, { requiredFor: ["POST", "PUT"], min: 1, max: 60 }),
   p("conf", "object", rw, { requiredFor: ["POST"], filterable: false }),
-  p("isActive", "boolean", rw),
-  p("archived", "boolean", ["SELECT"]),
-  p("archivedAt", "date", ["SELECT"]),
+  p("locked", "boolean", ["SELECT"], { typeChecked: false }),
+  p("isActive", "boolean", ["INSERT", "UPDATE"], {
+    requiredFor: ["POST", "PUT"],
+    typeChecked: false,
+    filterable: false,
+  }),
 ]);

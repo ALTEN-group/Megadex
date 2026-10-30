@@ -2,8 +2,7 @@ CREATE OR REPLACE VIEW preferences AS
   SELECT
     p.id,
     p."userId",
-    p."resourceId",
-    r.name AS "resourceName",
+    p."resourceName",
     p.name,
     p.conf,
     (p."userId" IS NULL) AS locked,
@@ -15,6 +14,5 @@ CREATE OR REPLACE VIEW preferences AS
     p."updaterId",
     p."updaterName"
   FROM preference AS p
-  LEFT JOIN resource AS r ON r.id = p."resourceId"
   ORDER BY p.id ASC
 ;

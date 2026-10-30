@@ -1,74 +1,60 @@
-create or replace view users AS
-  WITH history AS (
-    SELECT * FROM get_history('public', 'users')
-  )
-  SELECT u.id,
-    u.gender,
-    u.civility,
-    u."firstName", 
-    u."middleName",
-    u."lastName",
-    u.nickname,
-    u.email,
-    tv."emailVerifiedAt",
-    u.backupEmail,
-    tv."backupEmailVerifiedAt",
-    u.address,
-    u."zipCode",
-    u.city,
-    u.country,
-    u.phone,
-    u.birthdate,
-    u.portrait,
-    u.language,
-    u.job,
-    u.company,
-    u.website,
-    u.facebook,
-    u.instagram,
-    u.x,
-    u.linkedIn,
-    u.youTube,
-    u.tikTok,
-    u.gitHub,
-    u.pinterest,
-    u.discord,
-    u.reddit,
-    u.twitch,
-    u.active,
-    u.archived,
-    u."archivedAt",
-    NULL AS "consumerId",
-    NULL AS "consumerName",
-    h.tstamp AS "updatedAt",
-    h."consumerId" AS "updaterId",
-    h."consumerName" AS "updaterName",
-    h2.tstamp AS "createdAt",
-    h2."consumerId" AS "creatorId",
-    h2."consumerName" AS "creatorName",
-    array_agg(ur."roleId" ORDER BY ur."roleId" ASC) FILTER (WHERE (ur."roleId" IS NOT NULL)) AS "rolesArrayAgg"
-  FROM "user" AS u
-  LEFT JOIN user_role ur ON ur."userId" = u.id
-  LEFT JOIN (
-    SELECT 
-      "userId",
-      MAX(CASE WHEN "typeId" = 1 THEN "verifiedAt" END) AS "emailVerifiedAt",
-      MAX(CASE WHEN "typeId" = 2 THEN "verifiedAt" END) AS "backupEmailVerifiedAt"
-    FROM token 
-    WHERE "typeId" IN (1, 2) AND "verifiedAt" IS NOT NULL
-    GROUP BY "userId"
-  ) tv ON tv."userId" = u.id
-  LEFT JOIN history h ON (h.id, h.operation) = (u.id, 'UPDATE')
-  LEFT JOIN history h2 ON (h2.id, h2.operation) = (u.id, 'INSERT')
-  GROUP BY u.id, tv."emailVerifiedAt", tv."backupEmailVerifiedAt", 
-  h.tstamp, h."consumerId", h."consumerName", 
-  h2.tstamp, h2."consumerId", h2."consumerName"
-  ORDER BY "rolesArrayAgg" ASC
-;
+CREATE OR REPLACE VIEW users AS
+SELECT
+  u.id,
+  u.gender,
+  u.civility,
+  u."firstName",
+  u."middleName",
+  u."lastName",
+  u.nickname,
+  u.email,
+  u."backupEmail",
+  u.address,
+  u."zipCode",
+  u.city,
+  u.country,
+  u.nationality,
+  u.phone,
+  u.birthdate,
+  u.portrait,
+  u.language,
+  u.job,
+  u.company,
+  u.website,
+  u."gdprConsentedAt",
+  u."marketingConsentedAt",
+  u."pwdUpdatedAt",
+  u.active,
+  u.archived,
+  u."archivedAt",
+  u."createdAt",
+  u."creatorId",
+  u."creatorName",
+  u."updatedAt",
+  u."updaterId",
+  u."updaterName",
+  NULL::INT AS "consumerId",
+  NULL::TEXT AS "consumerName",
+  (
+    SELECT COALESCE(
+      array_agg(ur."roleId" ORDER BY ur."roleId"),
+      ARRAY[]::INT[]
+    )
+    FROM user_role AS ur
+    WHERE ur."userId" = u.id
+  ) AS "rolesArrayAgg",
+  (
+    SELECT COALESCE(
+      jsonb_object_agg(s.name, us.handle),
+      '{}'::JSONB
+    )
+    FROM user_social AS us
+    JOIN social AS s ON s.id = us."socialId"
+    WHERE us."userId" = u.id
+      AND s.archived = FALSE
+  ) AS "socialsJsonAgg"
+FROM "user" AS u;
 
---
--- Apply insert, update, delete user and user_role trigger  
---
-CREATE TRIGGER a 
-INSTEAD OF INSERT OR UPDATE ON "users"
-FOR EACH ROW EXECUTE PROCEDURE iud_user();
+CREATE TRIGGER users_iud_trigger
+INSTEAD OF INSERT OR UPDATE ON users
+FOR EACH ROW EXECUTE FUNCTION iud_user();

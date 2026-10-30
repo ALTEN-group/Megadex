@@ -119,33 +119,54 @@ describe("Megadex routes", () => {
 
 describe("preference ownership", () => {
   test("rejects anonymous preference access", async () => {
-    const response = await request(app)
-      .post("/megadex/preferences/search")
-      .send({});
+    const response = await request(app).get("/megadex/preferences/users");
     expect(response.status).toBe(401);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  test("rejects a resource outside the CHECK constraint", async () => {
+    const response = await request(app)
+      .get("/megadex/preferences/tokens")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "alice");
+    expect(response.status).toBe(400);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  test("returns templates and own rows for the forwarded user", async () => {
+    execute.mockResolvedValue({
+      rowCount: 1,
+      rows: [
+        {
+          id: 3,
+          resourceName: "users",
+          name: "Default",
+          conf: [],
+          locked: true,
+          isActive: true,
+        },
+      ],
+    });
+    const response = await request(app)
+      .get("/users/preferences/users")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "alice");
+    expect(response.status).toBe(200);
+    expect(response.body.rows[0]).toMatchObject({ name: "Default" });
+    expect(execute.mock.calls[0][1]).toEqual([42, "users"]);
   });
 
   test("ignores a supplied userId and inserts for the forwarded user", async () => {
     execute.mockResolvedValue({
       rowCount: 1,
-      rows: [
-        { id: 8, name: "grid", component: "users", conf: {}, isActive: true },
-      ],
+      rows: [{ id: 8, resourceName: "users", name: "grid", conf: [] }],
     });
     const response = await request(app)
-      .post("/users/preferences")
+      .post("/users/preferences/users")
       .set("x-consumer-user-id", "42")
       .set("x-consumer-name", "alice")
       .send({
-        rows: [
-          {
-            userId: 999,
-            name: "grid",
-            component: "users",
-            conf: {},
-            isActive: true,
-          },
-        ],
+        rows: [{ userId: 999, name: "grid", conf: [], isActive: true }],
       });
     expect(response.status).toBe(200);
     expect(execute.mock.calls[0][1][0]).toBe(42);
@@ -155,28 +176,27 @@ describe("preference ownership", () => {
   test("scopes updates to the forwarded user", async () => {
     execute.mockResolvedValue({
       rowCount: 1,
-      rows: [{ id: 8, name: "mine", component: "users", conf: {} }],
+      rows: [{ id: 8, resourceName: "users", name: "mine", conf: [] }],
     });
     const response = await request(app)
-      .put("/megadex/preferences")
+      .put("/megadex/preferences/users")
       .set("x-consumer-user-id", "42")
       .set("x-consumer-name", "alice")
       .send({ rows: [{ id: 8, userId: 999, name: "mine" }] });
     expect(response.status).toBe(200);
     const [sql, args] = execute.mock.calls[0];
     expect(sql).toContain('"userId"');
-    expect(args.at(-1)).toBe(42);
+    expect(args).toContain(42);
     expect(args).not.toContain(999);
   });
 
-  test("denies history for a preference the user does not own", async () => {
-    execute.mockResolvedValue({ rowCount: 0, rows: [] });
+  test("scopes deletes to the forwarded user", async () => {
+    execute.mockResolvedValue({ rowCount: 1, rows: [] });
     const response = await request(app)
-      .get("/megadex/preferences/8/history")
+      .delete("/megadex/preferences/users/8")
       .set("x-consumer-user-id", "42")
       .set("x-consumer-name", "alice");
-    expect(response.status).toBe(404);
-    expect(execute).toHaveBeenCalledTimes(1);
-    expect(execute.mock.calls[0][1]).toEqual([8, 42]);
+    expect(response.status).toBe(200);
+    expect(execute.mock.calls[0][1]).toEqual([8, "users", 42]);
   });
 });

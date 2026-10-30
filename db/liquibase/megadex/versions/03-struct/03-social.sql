@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS social (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(50) NOT NULL,
+  url VARCHAR(255) NULL,
+  archived BOOLEAN NOT NULL DEFAULT FALSE,
+  "archivedAt" TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_social_name
+  ON social (lower(name));

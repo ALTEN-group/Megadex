@@ -1,6 +1,6 @@
-ARG POSTGRES_VERSION
+ARG POSTGRES_VERSION=postgres:17-alpine
 FROM ${POSTGRES_VERSION}
 
-LABEL org.opencontainers.image.description="Gatelin local PostgreSQL database (development)"
+LABEL org.opencontainers.image.description="Megadex local PostgreSQL database (development)"
 
 COPY create_db.sh /docker-entrypoint-initdb.d/

@@ -1,35 +1,56 @@
 // @ts-check
 import { execute } from "@dwtechs/antity-pgsql";
 
-const WRITABLE = new Set(["name", "component", "conf", "isActive"]);
+/** Resources exposed by the Megadex admin, mirroring the preference CHECK constraint. */
+const RESOURCES = new Set(["users", "socials"]);
 
-export async function search(userId, body = {}) {
-  const clauses = ['"userId" = $1'];
-  const args = [userId];
-  for (const key of ["name", "component", "isActive", "archived"]) {
-    const filter = body.filters?.[key];
-    const value = Array.isArray(filter) ? filter[0]?.value : filter?.value;
-    if (value === undefined) continue;
-    args.push(value);
-    clauses.push(`"${key}" = $${args.length}`);
-  }
-  const result = await execute(
-    `SELECT id, name, component, conf, "isActive", archived, "archivedAt"
-     FROM preference WHERE ${clauses.join(" AND ")} ORDER BY id`,
-    args,
-    null,
-  );
-  return result.rows;
+export function assertResource(resource) {
+  if (!RESOURCES.has(resource))
+    throw badRequest(`Unknown resource "${resource}"`);
+  return resource;
 }
 
-export async function create(userId, rows) {
+/**
+ * Fetches the merged list of preferences available for a resource from the
+ * `preferences` view (templates, "userId" IS NULL / locked=true, and this
+ * user's own preference rows, locked=false). "isActive" reflects this user's
+ * own preference_selection row.
+ *
+ * @param {number} userId
+ * @param {string} resource - resource name (matched against "resourceName")
+ * @returns {Promise<Array<object>>}
+ */
+export async function getMany(userId, resource) {
+  const { rows } = await execute(
+    `SELECT v.id, v."resourceName", v.name, v.conf, v.locked,
+            COALESCE(v.id = ps."preferenceId", false) AS "isActive"
+     FROM preferences v
+     LEFT JOIN preference_selection ps ON ps."resourceName" = v."resourceName" AND ps."userId" = $1
+     WHERE v."resourceName" = $2 AND (v.locked OR v."userId" = $1)
+     ORDER BY v.name`,
+    [userId, resource],
+    null,
+  );
+  return rows;
+}
+
+export async function create(consumer, resource, rows) {
   const created = [];
   for (const row of requireRows(rows)) {
+    if (!row.name) throw badRequest("Preference name is required");
     const result = await execute(
-      `INSERT INTO preference ("userId", name, component, conf, "isActive")
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, name, component, conf, "isActive", archived, "archivedAt"`,
-      [userId, row.name, row.component, row.conf, row.isActive ?? false],
+      `INSERT INTO preferences
+         ("userId", "resourceName", name, conf, "isActive", "creatorId", "creatorName")
+       VALUES ($1, $2, $3, $4, $5, $1, $6)
+       RETURNING id, "resourceName", name, conf, "isActive"`,
+      [
+        consumer.userId,
+        resource,
+        row.name,
+        JSON.stringify(row.conf ?? []),
+        row.isActive ?? false,
+        consumer.nickname,
+      ],
       null,
     );
     created.push(...result.rows);
@@ -37,21 +58,31 @@ export async function create(userId, rows) {
   return created;
 }
 
-export async function update(userId, rows) {
+/**
+ * Updates through the `preferences` view so iud_preference() applies the
+ * template/personal rules: editing a locked template forks a personal copy,
+ * and a personal row is only writable by its owner.
+ */
+export async function update(consumer, resource, rows) {
   const updated = [];
   for (const row of requireRows(rows)) {
     if (!Number.isInteger(row.id))
       throw badRequest("Preference id is required");
-    const entries = Object.entries(row).filter(([key]) => WRITABLE.has(key));
-    if (!entries.length) throw badRequest("No preference fields to update");
-    const args = entries.map(([, value]) => value);
-    const sets = entries.map(([key], index) => `"${key}" = $${index + 1}`);
-    args.push(row.id, userId);
     const result = await execute(
-      `UPDATE preference SET ${sets.join(", ")}
-       WHERE id = $${args.length - 1} AND "userId" = $${args.length}
-       RETURNING id, name, component, conf, "isActive", archived, "archivedAt"`,
-      args,
+      `UPDATE preferences SET
+         name = $1, conf = $2, "isActive" = $3,
+         "updaterId" = $4, "updaterName" = $5
+       WHERE id = $6 AND "resourceName" = $7 AND (locked OR "userId" = $4)
+       RETURNING id, "resourceName", name, conf, "isActive"`,
+      [
+        row.name ?? null,
+        row.conf === undefined ? null : JSON.stringify(row.conf),
+        row.isActive ?? false,
+        consumer.userId,
+        consumer.nickname,
+        row.id,
+        resource,
+      ],
       null,
     );
     if (!result.rowCount) throw notFound();
@@ -60,33 +91,17 @@ export async function update(userId, rows) {
   return updated;
 }
 
-export async function archive(userId, rows) {
-  const ids = requireRows(rows).map((row) => Number(row.id));
-  if (ids.some((id) => !Number.isInteger(id) || id < 1))
-    throw badRequest("Valid preference ids are required");
-  const owned = await execute(
-    'SELECT id FROM preference WHERE "userId" = $1 AND id = ANY($2::int[])',
-    [userId, ids],
-    null,
-  );
-  if (owned.rowCount !== ids.length) throw notFound();
+/** Templates are protected by check_preference_template_delete(). */
+export async function remove(userId, resource, id) {
+  if (!Number.isInteger(id) || id < 1)
+    throw badRequest("Valid preference id is required");
   const result = await execute(
-    `UPDATE preference SET archived = true, "archivedAt" = now()
-     WHERE "userId" = $1 AND id = ANY($2::int[]) RETURNING id`,
-    [userId, ids],
-    null,
-  );
-  if (result.rowCount !== ids.length) throw notFound();
-  return result.rows;
-}
-
-export async function assertOwner(userId, id) {
-  const result = await execute(
-    'SELECT id FROM preference WHERE id = $1 AND "userId" = $2',
-    [id, userId],
+    'DELETE FROM preferences WHERE id = $1 AND "resourceName" = $2 AND "userId" = $3',
+    [id, resource, userId],
     null,
   );
   if (!result.rowCount) throw notFound();
+  return [{ id }];
 }
 
 function requireRows(rows) {
