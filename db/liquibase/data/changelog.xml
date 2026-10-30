@@ -6,9 +6,15 @@
     https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
   <!--
-    Environment-specific Megadex data changesets belong here. Fixed reference
-    data is versioned by the main changelog. The copied Gatelin CORS,
-    application, and role fixtures were intentionally removed.
+    Dev/demo data, applied after the megadex changelog when this folder is
+    mounted at /liquibase/data (docker/docker-compose.yml). Not baked into the
+    production migration image. Fixed reference data is versioned by the main
+    changelog.
   -->
+
+  <changeSet id="data-01" author="lcluber">
+    <comment>Dev/demo users (2 named + 2000 bulk)</comment>
+    <sqlFile path="01-users.sql" splitStatements="false"/>
+  </changeSet>
 
 </databaseChangeLog>

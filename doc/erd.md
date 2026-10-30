@@ -1,15 +1,14 @@
 ```mermaid
 ---
-caption: Diagramme entité-relation de ms_user
+caption: Diagramme entité-relation de megadex
 ---
 
 erDiagram
-  
-  user ||--o{ preference : "userId"
-  preference ||--o{ preference_selection : "preferenceId"
-  user ||--o{ history : "userId"
+
+  user ||--o{ user_role : "userId"
   user ||--o{ user_social : "userId"
   social ||--o{ user_social : "socialId"
+  preference ||--o{ preference_selection : "preferenceId"
 
   user {
     int id
@@ -28,29 +27,59 @@ erDiagram
     country nationality
     string phone
     date birthdate
-    string pwdHash
     string portrait
     language language
     string job
     string company
     string website
-    time emailConfirmedAt
-    time passwordUpdatedAt
+    timestamptz gdprConsentedAt
+    timestamptz marketingConsentedAt
     boolean active
     boolean archived
-    time archivedAt
+    timestamptz archivedAt
+    timestamptz createdAt
+    int creatorId
+    string creatorName
+    timestamptz updatedAt
+    int updaterId
+    string updaterName
+  }
+
+  user_role {
+    int userId
+    int roleId "Gatelin role id, no FK"
+  }
+
+  user_social {
+    int userId
+    int socialId
+    string handle
+  }
+
+  social {
+    int id
+    string name
+    string url
+    boolean archived
+    timestamptz archivedAt
+    timestamptz createdAt
+    int creatorId
+    string creatorName
+    timestamptz updatedAt
+    int updaterId
+    string updaterName
   }
 
   preference {
     int id
-    int userId
+    int userId "NULL = locked template"
     string resourceName
     string name
     jsonb conf
-    time createdAt
+    timestamptz createdAt
     int creatorId
     string creatorName
-    time updatedAt
+    timestamptz updatedAt
     int updaterId
     string updaterName
   }
@@ -62,47 +91,35 @@ erDiagram
   }
 
   country_trans {
-    string code
-    string lang
-    string name
+    country code
+    language lang
+    string trans
     string nationality
   }
 
-  gender_trans {
-    string code
-    string lang
-    string name
-  }
-
   civility_trans {
-    string code
-    string lang
-    string name
+    civility code
+    language lang
+    string trans
+    string abbr
   }
 
-  social {
-    int id
-    string name
-    string url
-    boolean archived
-    time archivedAt
-  }
-
-  user_social {
-    int userId
-    int socialId
-    string handle
+  gender_trans {
+    gender code
+    language lang
+    string trans
+    string abbr
   }
 
   history {
     int id
-    time tstamp
+    timestamp tstamp
     string schemaName
     string tableName
     string operation
     string dbUser
-    int consumerId
-    string consumerName
+    int userId
+    string userName
     jsonb record
   }
 

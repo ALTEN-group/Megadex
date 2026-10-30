@@ -3,7 +3,13 @@ CREATE TABLE IF NOT EXISTS social (
   name VARCHAR(50) NOT NULL,
   url VARCHAR(255) NULL,
   archived BOOLEAN NOT NULL DEFAULT FALSE,
-  "archivedAt" TIMESTAMPTZ NULL
+  "archivedAt" TIMESTAMPTZ NULL,
+  "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+  "creatorId" INT,
+  "creatorName" TEXT,
+  "updatedAt" TIMESTAMPTZ NULL,
+  "updaterId" INT,
+  "updaterName" TEXT
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_social_name

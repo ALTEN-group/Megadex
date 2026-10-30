@@ -115,6 +115,41 @@ describe("Megadex routes", () => {
       .send({ rows: [{ firstName: "A" }] });
     expect(response.status).toBe(401);
   });
+
+  test("reads user history across the user, role and social tables", async () => {
+    execute.mockResolvedValue({
+      rowCount: 2,
+      rows: [
+        {
+          id: 1,
+          tstamp: "2026-01-01T00:00:00.000Z",
+          operation: "INSERT",
+          consumerId: 42,
+          consumerName: "alice",
+          record: { id: 7 },
+        },
+        {
+          id: 2,
+          tstamp: "2026-01-02T00:00:00.000Z",
+          operation: "UPDATE",
+          consumerId: 42,
+          consumerName: "alice",
+          record: { id: 7 },
+        },
+      ],
+    });
+    const response = await request(app)
+      .get("/megadex/users/7/history")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "alice");
+    expect(response.status).toBe(200);
+    expect(response.body.rows).toHaveLength(2);
+    expect(execute.mock.calls[0][1][1]).toEqual([
+      "user",
+      "user_role",
+      "user_social",
+    ]);
+  });
 });
 
 describe("preference ownership", () => {

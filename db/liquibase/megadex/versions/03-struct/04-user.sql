@@ -25,7 +25,6 @@ CREATE TABLE IF NOT EXISTS "user" (
   website VARCHAR(255) NULL,
   "gdprConsentedAt" TIMESTAMPTZ NULL,
   "marketingConsentedAt" TIMESTAMPTZ NULL,
-  "pwdUpdatedAt" TIMESTAMPTZ NULL,
   active BOOLEAN NOT NULL DEFAULT FALSE,
   archived BOOLEAN NOT NULL DEFAULT FALSE,
   "archivedAt" TIMESTAMPTZ NULL,

@@ -9,6 +9,7 @@ import {
   mapUserRoles,
   rolesToApi,
   rolesToDatabase,
+  rolesToSchema,
 } from "../middlewares/user-roles.js";
 
 const router = express.Router();
@@ -33,19 +34,9 @@ router.get("/me", requireIdentity, async (_req, res, next) => {
   }
 });
 
-function stampConsumer(req, res, next) {
-  const { userId, nickname } = res.locals.consumer ?? {};
-  for (const row of req.body?.rows ?? []) {
-    row.consumerId = userId;
-    row.consumerName = nickname;
-  }
-  next();
-}
-
 router.post(
   "/",
   requireIdentity,
-  stampConsumer,
   rolesToDatabase,
   userEnt.addArraySubstack,
   rolesToApi,
@@ -53,17 +44,16 @@ router.post(
 router.put(
   "/",
   requireIdentity,
-  stampConsumer,
   rolesToDatabase,
   userEnt.updateArraySubstack,
   rolesToApi,
 );
 router.post("/archive", requireIdentity, userEnt.archive);
-router.get("/schema", requireIdentity, schema.get(userEnt));
+router.get("/schema", requireIdentity, schema.get(userEnt), rolesToSchema);
 router.get(
   "/:id/history",
   requireIdentity,
-  history.get(["users", "user_role"]),
+  history.get(["user", "user_role", "user_social"]),
 );
 
 export default router;

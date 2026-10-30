@@ -36,15 +36,6 @@ export default new SQLEntity("users", [
   p("creatorName", "string", ro, { filterable: false, max: 100 }),
   p("updatedAt", "date", ro),
   p("updaterName", "string", ro, { filterable: false, max: 100 }),
-  p("consumerId", "integer", ["INSERT", "UPDATE"], {
-    privateField: true,
-    filterable: false,
-  }),
-  p("consumerName", "string", ["INSERT", "UPDATE"], {
-    privateField: true,
-    filterable: false,
-    max: 100,
-  }),
   p("rolesArrayAgg", "array", rw, { privateField: true }),
   // Keys are social catalog names, values are the user's handle on that network.
   p("socialsJsonAgg", "object", rw, { filterable: false }),

@@ -23,6 +23,22 @@ export function rolesToApi(_req, res, next) {
   next();
 }
 
+// The schema hides the private rolesArrayAgg column: expose its API name instead,
+// so clients (admin ACL field enrichment) see `roles` as writable.
+export function rolesToSchema(_req, res, next) {
+  if (Array.isArray(res.locals.rows))
+    res.locals.rows.push({
+      key: "roles",
+      type: "array",
+      min: null,
+      max: null,
+      operations: ["SELECT", "INSERT", "UPDATE"],
+      requiredFor: [],
+      isFilterable: false,
+    });
+  next();
+}
+
 export function mapUserRoles(row) {
   const { rolesArrayAgg, ...user } = row;
   return {

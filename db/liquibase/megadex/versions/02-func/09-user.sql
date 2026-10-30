@@ -1,100 +1,113 @@
--- Write support for the users view.
+-- INSTEAD OF trigger function for the users view: writes "user" plus its user_role
+-- and user_social junctions.
+-- History of "user" is logged by its own AFTER trigger; the junctions are logged here.
 CREATE OR REPLACE FUNCTION iud_user() RETURNS trigger AS $$
-DECLARE
-  role_id INT;
-  actor_id INT;
-  actor_name TEXT;
-BEGIN
-  actor_id := COALESCE(NEW."consumerId", NEW."updaterId", NEW."creatorId");
-  actor_name := COALESCE(NEW."consumerName", NEW."updaterName", NEW."creatorName");
+  BEGIN
+    IF TG_OP = 'INSERT' THEN
+      INSERT INTO "user" (
+        gender, civility, "firstName", "middleName", "lastName", nickname, email,
+        "backupEmail", address, "zipCode", city, country, nationality, phone,
+        birthdate, portrait, language, job, company, website,
+        "gdprConsentedAt", "marketingConsentedAt", active,
+        "creatorId", "creatorName")
+      VALUES (
+        NEW.gender, NEW.civility, NEW."firstName", NEW."middleName", NEW."lastName",
+        NEW.nickname, NEW.email, NEW."backupEmail", NEW.address, NEW."zipCode",
+        NEW.city, NEW.country, NEW.nationality, NEW.phone, NEW.birthdate,
+        NEW.portrait, COALESCE(NEW.language, 'en'), NEW.job, NEW.company,
+        NEW.website, NEW."gdprConsentedAt", NEW."marketingConsentedAt",
+        COALESCE(NEW.active, FALSE), NEW."creatorId", NEW."creatorName")
+      RETURNING id INTO NEW.id;
 
-  -- log_history() is shared verbatim across services and reads the acting
-  -- identity from creatorId/updaterId on the record, so map the forwarded
-  -- consumer onto those fields here rather than changing the shared function.
-  IF TG_OP = 'INSERT' THEN
-    NEW."creatorId" := actor_id;
-    NEW."creatorName" := actor_name;
-  ELSE
-    NEW."updaterId" := actor_id;
-    NEW."updaterName" := actor_name;
-  END IF;
+      IF NEW."rolesArrayAgg" IS NOT NULL THEN
+        INSERT INTO user_role ("userId", "roleId")
+        SELECT NEW.id, r FROM unnest(NEW."rolesArrayAgg") AS r
+        ON CONFLICT DO NOTHING;
 
-  IF TG_OP = 'INSERT' THEN
-    INSERT INTO "user" (
-      gender, civility, "firstName", "middleName", "lastName", nickname,
-      email, "backupEmail", address, "zipCode", city, country, nationality,
-      phone, birthdate, portrait, language, job, company, website,
-      "gdprConsentedAt", "marketingConsentedAt",
-      "pwdUpdatedAt", active, "creatorId", "creatorName"
-    ) VALUES (
-      NEW.gender, NEW.civility, NEW."firstName", NEW."middleName",
-      NEW."lastName", NEW.nickname, NEW.email, NEW."backupEmail", NEW.address,
-      NEW."zipCode", NEW.city, NEW.country, NEW.nationality, NEW.phone,
-      NEW.birthdate, NEW.portrait, COALESCE(NEW.language, 'en'), NEW.job,
-      NEW.company, NEW.website,
-      NEW."gdprConsentedAt", NEW."marketingConsentedAt", NEW."pwdUpdatedAt",
-      COALESCE(NEW.active, FALSE), actor_id, actor_name
-    )
-    RETURNING id INTO NEW.id;
+        PERFORM log_history(TG_TABLE_SCHEMA, 'user_role', TG_OP, json_build_object(
+          'id', NEW.id,
+          'rolesArrayAgg', NEW."rolesArrayAgg",
+          'creatorId', NEW."creatorId",
+          'creatorName', NEW."creatorName"));
+      END IF;
 
-    FOREACH role_id IN ARRAY COALESCE(NEW."rolesArrayAgg", ARRAY[]::INT[]) LOOP
-      INSERT INTO user_role ("userId", "roleId") VALUES (NEW.id, role_id);
-    END LOOP;
+      IF NEW."socialsJsonAgg" IS NOT NULL THEN
+        PERFORM set_user_socials(NEW.id, NEW."socialsJsonAgg");
 
-    IF NEW."socialsJsonAgg" IS NOT NULL THEN
-      PERFORM set_user_socials(NEW.id, NEW."socialsJsonAgg");
+        PERFORM log_history(TG_TABLE_SCHEMA, 'user_social', TG_OP, json_build_object(
+          'id', NEW.id,
+          'socialsJsonAgg', NEW."socialsJsonAgg",
+          'creatorId', NEW."creatorId",
+          'creatorName', NEW."creatorName"));
+      END IF;
+
+      RETURN NEW;
+
+    ELSIF TG_OP = 'UPDATE' THEN
+      -- NEW holds OLD values for columns the UPDATE did not set, so nullable
+      -- columns are assigned as-is: an explicit NULL clears them.
+      UPDATE "user" SET
+        gender                 = NEW.gender,
+        civility               = NEW.civility,
+        "firstName"            = COALESCE(NEW."firstName", "firstName"),
+        "middleName"           = NEW."middleName",
+        "lastName"             = COALESCE(NEW."lastName", "lastName"),
+        nickname               = COALESCE(NEW.nickname, nickname),
+        email                  = COALESCE(NEW.email, email),
+        "backupEmail"          = NEW."backupEmail",
+        address                = NEW.address,
+        "zipCode"              = NEW."zipCode",
+        city                   = NEW.city,
+        country                = NEW.country,
+        nationality            = NEW.nationality,
+        phone                  = NEW.phone,
+        birthdate              = NEW.birthdate,
+        portrait               = NEW.portrait,
+        language               = COALESCE(NEW.language, language),
+        job                    = NEW.job,
+        company                = NEW.company,
+        website                = NEW.website,
+        "gdprConsentedAt"      = NEW."gdprConsentedAt",
+        "marketingConsentedAt" = NEW."marketingConsentedAt",
+        active                 = COALESCE(NEW.active, active),
+        "updatedAt"            = NOW(),
+        "updaterId"            = NEW."updaterId",
+        "updaterName"          = NEW."updaterName"
+      WHERE id = OLD.id;
+
+      IF NEW.archived IS DISTINCT FROM OLD.archived THEN
+        PERFORM set_archived('user', OLD.id, NEW.archived, OLD.archived);
+      END IF;
+
+      IF NEW."rolesArrayAgg" IS NOT NULL
+         AND NEW."rolesArrayAgg" IS DISTINCT FROM OLD."rolesArrayAgg" THEN
+        DELETE FROM user_role WHERE "userId" = OLD.id;
+
+        INSERT INTO user_role ("userId", "roleId")
+        SELECT OLD.id, r FROM unnest(NEW."rolesArrayAgg") AS r
+        ON CONFLICT DO NOTHING;
+
+        PERFORM log_history(TG_TABLE_SCHEMA, 'user_role', TG_OP, json_build_object(
+          'id', OLD.id,
+          'rolesArrayAgg', NEW."rolesArrayAgg",
+          'updaterId', NEW."updaterId",
+          'updaterName', NEW."updaterName"));
+      END IF;
+
+      IF NEW."socialsJsonAgg" IS NOT NULL
+         AND NEW."socialsJsonAgg" IS DISTINCT FROM OLD."socialsJsonAgg" THEN
+        PERFORM set_user_socials(OLD.id, NEW."socialsJsonAgg");
+
+        PERFORM log_history(TG_TABLE_SCHEMA, 'user_social', TG_OP, json_build_object(
+          'id', OLD.id,
+          'socialsJsonAgg', NEW."socialsJsonAgg",
+          'updaterId', NEW."updaterId",
+          'updaterName', NEW."updaterName"));
+      END IF;
+
+      RETURN NEW;
     END IF;
 
-    PERFORM log_history(TG_TABLE_SCHEMA, TG_RELNAME, TG_OP, row_to_json(NEW));
-    RETURN NEW;
-  ELSIF TG_OP = 'UPDATE' THEN
-    UPDATE "user"
-    SET
-      gender = COALESCE(NEW.gender, gender),
-      civility = COALESCE(NEW.civility, civility),
-      "firstName" = COALESCE(NEW."firstName", "firstName"),
-      "middleName" = COALESCE(NEW."middleName", "middleName"),
-      "lastName" = COALESCE(NEW."lastName", "lastName"),
-      nickname = COALESCE(NEW.nickname, nickname),
-      email = COALESCE(NEW.email, email),
-      "backupEmail" = COALESCE(NEW."backupEmail", "backupEmail"),
-      address = COALESCE(NEW.address, address),
-      "zipCode" = COALESCE(NEW."zipCode", "zipCode"),
-      city = COALESCE(NEW.city, city),
-      country = COALESCE(NEW.country, country),
-      nationality = COALESCE(NEW.nationality, nationality),
-      phone = COALESCE(NEW.phone, phone),
-      birthdate = COALESCE(NEW.birthdate, birthdate),
-      portrait = NEW.portrait,
-      language = COALESCE(NEW.language, language),
-      job = COALESCE(NEW.job, job),
-      company = COALESCE(NEW.company, company),
-      website = COALESCE(NEW.website, website),
-      "gdprConsentedAt" = COALESCE(NEW."gdprConsentedAt", "gdprConsentedAt"),
-      "marketingConsentedAt" = COALESCE(NEW."marketingConsentedAt", "marketingConsentedAt"),
-      "pwdUpdatedAt" = COALESCE(NEW."pwdUpdatedAt", "pwdUpdatedAt"),
-      active = COALESCE(NEW.active, active),
-      archived = COALESCE(NEW.archived, archived),
-      "updatedAt" = NOW(),
-      "updaterId" = actor_id,
-      "updaterName" = actor_name
-    WHERE id = OLD.id;
-
-    IF NEW."rolesArrayAgg" IS NOT NULL THEN
-      DELETE FROM user_role WHERE "userId" = OLD.id;
-      FOREACH role_id IN ARRAY NEW."rolesArrayAgg" LOOP
-        INSERT INTO user_role ("userId", "roleId") VALUES (OLD.id, role_id);
-      END LOOP;
-    END IF;
-
-    IF NEW."socialsJsonAgg" IS NOT NULL THEN
-      PERFORM set_user_socials(OLD.id, NEW."socialsJsonAgg");
-    END IF;
-
-    PERFORM log_history(TG_TABLE_SCHEMA, TG_RELNAME, TG_OP, row_to_json(NEW));
-    RETURN NEW;
-  END IF;
-
-  RETURN NULL;
-END;
+    RETURN NULL;
+  END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

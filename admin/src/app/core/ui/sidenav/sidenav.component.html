@@ -1,0 +1,39 @@
+<p-panel
+  (mouseover)="sidenavService.setExpanded(true)"
+  (mouseleave)="sidenavService.setExpanded(false)"
+  (focusin)="sidenavService.setExpanded(true)"
+  (focusout)="sidenavService.setExpanded(false)"
+  [class.collapsed]="!sidenavService.getExpanded()">
+
+  <ng-template pTemplate="header">
+    <div [routerLink]="'/'" class="header">
+      <div class="wordmark">
+        <svg viewBox="0 0 73 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="megadexWordmark" x1="0" y1="0" x2="73" y2="100" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818CF8"/>
+              <stop offset="100%" stop-color="#4338CA"/>
+            </linearGradient>
+          </defs>
+          <path d="M 0 100 L 0 0 L 18 0 L 36 36 L 54 0 L 72 0 L 72 100 L 54 100 L 54 38 L 36 72 L 18 38 L 18 100 Z"
+                fill="url(#megadexWordmark)"/>
+        </svg>
+        @if (sidenavService.getExpanded()) {
+          <span class="wordmark-text">egadex</span>
+        }
+      </div>
+    </div>
+    <i class="pi pi-angle-double-{{sidenavService.getPinned() ? 'left' : 'right'}} toggle-icon"
+      (click)="sidenavService.togglePinned()">
+    </i>
+  </ng-template>
+
+    @if (sideNavItems()) {
+      <p-panelMenu #panelMenu
+        [model]="sideNavItems()"
+        [multiple]="false"
+        styleClass="sidenav"
+        [style]="{'width':'100%'}"
+      />
+    }
+</p-panel>

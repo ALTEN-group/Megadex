@@ -1,11 +1,11 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
     https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-  <!-- Audit infrastructure -->
+  <!-- history -->
   <changeSet id="01-hist-01" author="lcluber">
     <comment>Create the log schema and history table</comment>
     <sqlFile path="versions/01-hist/01-struct.sql" splitStatements="false"/>
@@ -23,7 +23,7 @@
     <sqlFile path="versions/01-hist/05-index.sql" splitStatements="false"/>
   </changeSet>
 
-  <!-- Shared utility functions -->
+  <!-- functions -->
   <changeSet id="02-func-01" author="lcluber">
     <comment>Create archived-row hard-delete helper</comment>
     <sqlFile path="versions/02-func/01-delete.sql" splitStatements="false"/>
@@ -61,83 +61,88 @@
     <sqlFile path="versions/02-func/09-user.sql" splitStatements="false"/>
   </changeSet>
 
-  <!-- Megadex user-domain structures -->
+  <!-- structures -->
   <changeSet id="03-struct-01" author="lcluber">
-    <comment>Create user-domain enum and code types</comment>
-    <sqlFile path="versions/03-struct/02-enum.sql" splitStatements="false"/>
-  </changeSet>
-  <changeSet id="03-struct-02" author="lcluber">
-    <comment>Create the social-network catalog</comment>
-    <sqlFile path="versions/03-struct/03-social.sql" splitStatements="false"/>
-  </changeSet>
-  <changeSet id="03-struct-03" author="lcluber">
-    <comment>Create the user table</comment>
-    <sqlFile path="versions/03-struct/04-user.sql" splitStatements="false"/>
-  </changeSet>
-  <changeSet id="03-struct-04" author="lcluber">
-    <comment>Create user-to-role assignments</comment>
-    <sqlFile path="versions/03-struct/05-user-role.sql" splitStatements="false"/>
-  </changeSet>
-  <changeSet id="03-struct-05" author="lcluber">
-    <comment>Create user-to-social-network handles</comment>
-    <sqlFile path="versions/03-struct/06-user-social.sql" splitStatements="false"/>
-  </changeSet>
-  <changeSet id="03-struct-06" author="lcluber">
-    <comment>Create country translations</comment>
-    <sqlFile path="versions/03-struct/07-country-trans.sql" splitStatements="false"/>
-  </changeSet>
-  <changeSet id="03-struct-07" author="lcluber">
-    <comment>Create civility translations</comment>
-    <sqlFile path="versions/03-struct/08-civility-trans.sql" splitStatements="false"/>
-  </changeSet>
-  <changeSet id="03-struct-08" author="lcluber">
-    <comment>Create gender translations</comment>
-    <sqlFile path="versions/03-struct/09-gender-trans.sql" splitStatements="false"/>
-  </changeSet>
-  <changeSet id="03-struct-09" author="lcluber">
     <comment>Create preference templates and per-user selection</comment>
     <sqlFile path="versions/03-struct/01-preference.sql" splitStatements="false"/>
   </changeSet>
-
-  <!-- Writable views -->
-  <changeSet id="04-view-01" author="lcluber">
-    <comment>Create writable users API view</comment>
-    <sqlFile path="versions/04-view/02-user.sql" splitStatements="false"/>
+  <changeSet id="03-struct-02" author="lcluber">
+    <comment>Create user-domain enum and code types</comment>
+    <sqlFile path="versions/03-struct/02-enum.sql" splitStatements="false"/>
   </changeSet>
-  <changeSet id="04-view-02" author="lcluber">
+  <changeSet id="03-struct-03" author="lcluber">
+    <comment>Create the social-network catalog</comment>
+    <sqlFile path="versions/03-struct/03-social.sql" splitStatements="false"/>
+  </changeSet>
+  <changeSet id="03-struct-04" author="lcluber">
+    <comment>Create the user table</comment>
+    <sqlFile path="versions/03-struct/04-user.sql" splitStatements="false"/>
+  </changeSet>
+  <changeSet id="03-struct-05" author="lcluber">
+    <comment>Create user-to-role assignments</comment>
+    <sqlFile path="versions/03-struct/05-user-role.sql" splitStatements="false"/>
+  </changeSet>
+  <changeSet id="03-struct-06" author="lcluber">
+    <comment>Create user-to-social-network handles</comment>
+    <sqlFile path="versions/03-struct/06-user-social.sql" splitStatements="false"/>
+  </changeSet>
+  <changeSet id="03-struct-07" author="lcluber">
+    <comment>Create country translations</comment>
+    <sqlFile path="versions/03-struct/07-country-trans.sql" splitStatements="false"/>
+  </changeSet>
+  <changeSet id="03-struct-08" author="lcluber">
+    <comment>Create civility translations</comment>
+    <sqlFile path="versions/03-struct/08-civility-trans.sql" splitStatements="false"/>
+  </changeSet>
+  <changeSet id="03-struct-09" author="lcluber">
+    <comment>Create gender translations</comment>
+    <sqlFile path="versions/03-struct/09-gender-trans.sql" splitStatements="false"/>
+  </changeSet>
+
+  <!-- views -->
+  <changeSet id="04-view-01" author="lcluber">
     <comment>Create writable preferences API view</comment>
     <sqlFile path="versions/04-view/01-preference.sql" splitStatements="false"/>
   </changeSet>
-
-  <changeSet id="05-trig-01" author="lcluber">
-    <comment>Keep archivedAt in sync on user and social rows</comment>
-    <sqlFile path="versions/05-trig/02-archived.sql" splitStatements="false"/>
+  <changeSet id="04-view-02" author="lcluber">
+    <comment>Create users API view</comment>
+    <sqlFile path="versions/04-view/02-user.sql" splitStatements="false"/>
   </changeSet>
-  <changeSet id="05-trig-02" author="lcluber">
+
+  <!-- triggers -->
+  <changeSet id="05-trig-01" author="lcluber">
     <comment>Enforce preference limits, template guards, and view writes</comment>
     <sqlFile path="versions/05-trig/01-preference.sql" splitStatements="false"/>
   </changeSet>
+  <changeSet id="05-trig-02" author="lcluber">
+    <comment>Wire users view writes, archived timestamp and history on user</comment>
+    <sqlFile path="versions/05-trig/02-user.sql" splitStatements="false"/>
+  </changeSet>
+  <changeSet id="05-trig-03" author="lcluber">
+    <comment>Wire archived timestamp and history on social</comment>
+    <sqlFile path="versions/05-trig/03-social.sql" splitStatements="false"/>
+  </changeSet>
 
-  <!-- Fixed reference data -->
-  <changeSet id="05-data-01" author="lcluber">
+  <!-- data -->
+  <changeSet id="06-data-01" author="lcluber">
     <comment>Load country translations</comment>
-    <sqlFile path="versions/06-data/02-country.sql" splitStatements="false"/>
+    <sqlFile path="versions/06-data/01-country.sql" splitStatements="false"/>
   </changeSet>
-  <changeSet id="05-data-02" author="lcluber">
+  <changeSet id="06-data-02" author="lcluber">
     <comment>Load civility translations</comment>
-    <sqlFile path="versions/06-data/03-civility.sql" splitStatements="false"/>
+    <sqlFile path="versions/06-data/02-civility.sql" splitStatements="false"/>
   </changeSet>
-  <changeSet id="05-data-03" author="lcluber">
+  <changeSet id="06-data-03" author="lcluber">
     <comment>Load gender translations</comment>
-    <sqlFile path="versions/06-data/04-gender.sql" splitStatements="false"/>
+    <sqlFile path="versions/06-data/03-gender.sql" splitStatements="false"/>
   </changeSet>
-  <changeSet id="05-data-04" author="lcluber">
+  <changeSet id="06-data-04" author="lcluber">
     <comment>Load the social network catalog</comment>
-    <sqlFile path="versions/06-data/05-social.sql" splitStatements="false"/>
+    <sqlFile path="versions/06-data/04-social.sql" splitStatements="false"/>
   </changeSet>
-  <changeSet id="05-data-05" author="lcluber">
+  <changeSet id="06-data-05" author="lcluber">
     <comment>Load locked table-view preference templates</comment>
-    <sqlFile path="versions/06-data/01-preference.sql" splitStatements="false"/>
+    <sqlFile path="versions/06-data/05-preference.sql" splitStatements="false"/>
   </changeSet>
 
 </databaseChangeLog>

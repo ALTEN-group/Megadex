@@ -23,7 +23,6 @@ SELECT
   u.website,
   u."gdprConsentedAt",
   u."marketingConsentedAt",
-  u."pwdUpdatedAt",
   u.active,
   u.archived,
   u."archivedAt",
@@ -33,8 +32,6 @@ SELECT
   u."updatedAt",
   u."updaterId",
   u."updaterName",
-  NULL::INT AS "consumerId",
-  NULL::TEXT AS "consumerName",
   (
     SELECT COALESCE(
       array_agg(ur."roleId" ORDER BY ur."roleId"),
@@ -54,7 +51,3 @@ SELECT
       AND s.archived = FALSE
   ) AS "socialsJsonAgg"
 FROM "user" AS u;
-
-CREATE TRIGGER users_iud_trigger
-INSTEAD OF INSERT OR UPDATE ON users
-FOR EACH ROW EXECUTE FUNCTION iud_user();
