@@ -9,6 +9,7 @@ import {
   mapUserRoles,
   rolesToApi,
   rolesToDatabase,
+  rolesToSchema,
 } from "../middlewares/user-roles.js";
 
 const router = express.Router();
@@ -48,11 +49,11 @@ router.put(
   rolesToApi,
 );
 router.post("/archive", requireIdentity, userEnt.archive);
-router.get("/schema", requireIdentity, schema.get(userEnt));
+router.get("/schema", requireIdentity, schema.get(userEnt), rolesToSchema);
 router.get(
   "/:id/history",
   requireIdentity,
-  history.get(["users", "user_role"]),
+  history.get(["user", "user_role"]),
 );
 
 export default router;

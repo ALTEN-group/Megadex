@@ -1,7 +1,7 @@
 ARG LIQUIBASE_VERSION
 FROM liquibase/liquibase:${LIQUIBASE_VERSION}
 
-LABEL org.opencontainers.image.description="Gatelin database migrations (Liquibase)"
+LABEL org.opencontainers.image.description="Megadex database migrations (Liquibase)"
 
 USER root
 
@@ -13,8 +13,8 @@ USER liquibase
 # liquibase user (running at container start) can read/execute but not modify it.
 COPY --chown=root:root --chmod=755 ./entrypoint.sh /docker-entrypoint.sh
 
-# Bake the Gatelin schema changelog into the image
-COPY --chown=liquibase:liquibase ./gatelin /liquibase/changelog
+# Bake the Megadex schema changelog into the image
+COPY --chown=liquibase:liquibase ./megadex /liquibase/changelog
 
 # Optional user data volume (mount a data/changelog.xml at runtime)
 VOLUME ["/liquibase/data"]

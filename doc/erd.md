@@ -1,12 +1,12 @@
 ```mermaid
 ---
-caption: Diagramme entité-relation de ms_user
+caption: Diagramme entité-relation de megadex
 ---
 
 erDiagram
-  
+
+  user ||--o{ user_role : "userId"
   user ||--o{ preference : "userId"
-  user ||--o{ history : "userId"
 
   user {
     int id
@@ -25,7 +25,6 @@ erDiagram
     country nationality
     string phone
     date birthdate
-    string pwdHash
     string portrait
     language language
     string job
@@ -42,11 +41,22 @@ erDiagram
     string discord
     string reddit
     string twitch
-    time emailConfirmedAt
-    time passwordUpdatedAt
+    timestamptz gdprConsentedAt
+    timestamptz marketingConsentedAt
     boolean active
     boolean archived
-    time archivedAt
+    timestamptz archivedAt
+    timestamptz createdAt
+    int creatorId
+    string creatorName
+    timestamptz updatedAt
+    int updaterId
+    string updaterName
+  }
+
+  user_role {
+    int userId
+    int roleId "Gatelin role id, no FK"
   }
 
   preference {
@@ -55,27 +65,15 @@ erDiagram
     string name
     string component
     jsonb conf
+    boolean isActive
     boolean archived
-    time archivedAt
-  }
-
-  country_trans {
-    string code
-    string lang
-    string name
-    string nationality
-  }
-
-  gender_trans {
-    string code
-    string lang
-    string name
-  }
-
-  civility_trans {
-    string code
-    string lang
-    string name
+    timestamptz archivedAt
+    timestamptz createdAt
+    int creatorId
+    string creatorName
+    timestamptz updatedAt
+    int updaterId
+    string updaterName
   }
 
   social {
@@ -83,18 +81,45 @@ erDiagram
     string name
     string url
     boolean archived
-    time archivedAt
+    timestamptz archivedAt
+    timestamptz createdAt
+    int creatorId
+    string creatorName
+    timestamptz updatedAt
+    int updaterId
+    string updaterName
+  }
+
+  country_trans {
+    country code
+    language lang
+    string trans
+    string nationality
+  }
+
+  civility_trans {
+    civility code
+    language lang
+    string trans
+    string abbr
+  }
+
+  gender_trans {
+    gender code
+    language lang
+    string trans
+    string abbr
   }
 
   history {
     int id
-    time tstamp
+    timestamp tstamp
     string schemaName
     string tableName
     string operation
     string dbUser
-    int consumerId
-    string consumerName
+    int userId
+    string userName
     jsonb record
   }
 

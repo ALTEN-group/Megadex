@@ -1,0 +1,527 @@
+name: ${APP_NAME}
+
+x-service-healthcheck: &healthcheck
+  # /megadex/health/ready also proves Postgres is reachable; /megadex/health is liveness only.
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/megadex/health/ready"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+
+# dockerfile mount during build
+x-secret-args: &secretArgs
+  secrets:
+    - apt_repository
+    - apk_repository
+    - npmrc
+
+# mount for run
+x-secret-mount: &secretMount
+  - source: npmrc
+    target: /home/user/.npmrc
+
+x-default-args: &defaultArgs
+  UID: ${UID}
+  GID: ${GID}
+  TZ: ${TZ}
+  LOCALE: ${LOCALE:-C.UTF-8}
+  HOME_PATH: ${HOME_PATH}
+
+x-default-envs: &defaultEnvs
+  PORT: ${DEFAULT_PORT}
+  TZ: ${TZ}
+
+services:
+
+  postgres:
+    platform: linux/amd64
+    build:
+      context: ${PWD}/db/pgsql
+      dockerfile: dockerfile
+      args:
+        - POSTGRES_VERSION=${POSTGRES_VERSION}
+    container_name: ${POSTGRES_HOST}
+    hostname: ${POSTGRES_HOST}
+    environment:
+      TZ: ${TZ}
+      POSTGRES_DBS: ${POSTGRES_DBS}
+      POSTGRES_USER: ${POSTGRES_ROOT_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_ROOT_PWD}
+      #liquibase
+      LIQUIBASE_USER: ${LIQUIBASE_DB_USER}
+      LIQUIBASE_PWD: ${LIQUIBASE_DB_PWD}
+      # gatelin
+      GATELIN_USER: ${GATELIN_DB_USER}
+      GATELIN_PWD: ${GATELIN_DB_PWD}
+      # foxnox
+      FOXNOX_USER: ${FOXNOX_DB_USER}
+      FOXNOX_PWD: ${FOXNOX_DB_PWD}
+      # megadex
+      MEGADEX_USER: ${MEGADEX_DB_USER}
+      MEGADEX_PWD: ${MEGADEX_DB_PWD}
+    stdin_open: true
+    tty: true
+    networks:
+      - internal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_ROOT_USER}", "-d", "${MEGADEX_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  traefik:
+    image: traefik:${TRAEFIK_VERSION}
+    container_name: ${TRAEFIK_HOST}
+    hostname: ${TRAEFIK_HOST}
+    command:
+      - --providers.docker=true
+      - --providers.docker.network=${APP_NAME}-internal-${ENV_NAME}
+      - --providers.docker.constraints=Label(`stack.name`,`${APP_NAME}-${ENV_NAME}`)
+      - --entryPoints.web.address=${TRAEFIK_ENTRYPOINTS_WEB_ADDRESS}
+      - --entrypoints.web.forwardedHeaders=true
+      - --entryPoints.web.forwardedHeaders.insecure=true
+      - --providers.docker.exposedByDefault=${TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT}
+      - --api.insecure=${TRAEFIK_API_INSECURE}
+      - --log.level=${TRAEFIK_LOG_LEVEL}
+      - --accesslog=${TRAEFIK_ACCESSLOG}
+      - --ping=true
+      - --api.dashboard=true
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      - "traefik.http.routers.dashboard.rule=PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.dashboard.entrypoints=traefik"
+      - "traefik.http.routers.dashboard.service=api@internal"
+    restart: always
+    ports:
+      - ${TRAEFIK_PORT}:80
+      - ${TRAEFIK_DASH_PORT}:8080
+    networks:
+      - internal
+      - external
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  gatelin_migration:
+    image: ghcr.io/alten-group/gatelin-migration:${GATELIN_VERSION:-latest}
+    # platform: linux/amd64 # image is only published for amd64
+    container_name: ${GATELIN_MIGRATION_HOST}
+    hostname: ${GATELIN_MIGRATION_HOST}
+    environment:
+      TZ: ${TZ}
+      LIQUIBASE_COMMAND_USERNAME: ${LIQUIBASE_DB_USER}
+      LIQUIBASE_COMMAND_PASSWORD: ${LIQUIBASE_DB_PWD}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${GATELIN_DB_NAME}
+      DB_USER: ${GATELIN_DB_USER}
+      DB_PWD: ${GATELIN_DB_PWD}
+      DB_JOB_USER: ${GATELIN_DB_JOB_USER}
+      DB_JOB_PWD: ${GATELIN_DB_JOB_PWD}
+      UPDATE: ${LIQUIBASE_UPDATE}
+      ROLLBACK: ${LIQUIBASE_ROLLBACK}
+      SNAPSHOT: snapshot/snapshot${LIQUIBASE_SNAPSHOT}
+      LIQUIBASE_LOG_LEVEL: ${LIQUIBASE_LOG_LEVEL}
+      LIQUIBASE_COMMAND_CONTEXTS: ${LIQUIBASE_COMMAND_CONTEXTS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    volumes:
+      # Megadex service/routes/permissions + CORS, applied after Gatelin core schema
+      - ${PWD}/db/liquibase/gatelin-data/:/liquibase/data
+
+  gatelin:
+    image: ghcr.io/alten-group/gatelin:${GATELIN_VERSION:-latest}
+    # platform: linux/amd64 # image is only published for amd64
+    container_name: ${GATELIN_HOST}
+    hostname: ${GATELIN_HOST}
+    environment:
+      PORT: ${DEFAULT_PORT}
+      TZ: ${TZ}
+      PWD_CHECK_URL: ${GATELIN_PWD_CHECK_URL}
+      PWD_CHALLENGES_URL: ${GATELIN_PWD_CHALLENGES_URL}
+      PWD_TRUSTED_DEVICES_URL: ${GATELIN_PWD_TRUSTED_DEVICES_URL}
+      PWD_LOGIN_TICKET_URL: ${GATELIN_PWD_LOGIN_TICKET_URL}
+      USER_SEARCH_URL: ${MEGADEX_USER_SEARCH_URL}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_NAME: ${GATELIN_DB_NAME}
+      DB_USER: ${GATELIN_DB_USER}
+      DB_PWD: ${GATELIN_DB_PWD}
+      DB_JOB_USER: ${GATELIN_DB_JOB_USER}
+      DB_JOB_PWD: ${GATELIN_DB_JOB_PWD}
+      TOKEN_SECRET: ${GATELIN_TOKEN_SECRET}
+      APP_NAME: ${APP_NAME}
+      ENV_NAME: ${ENV_NAME}
+      SERVER_SCHEME: ${SERVER_SCHEME}
+      SERVICE_NAME: ${GATELIN_HOST}
+      ACCESS_TOKEN_DURATION: ${GATELIN_ACCESS_TOKEN_DURATION}
+      REFRESH_TOKEN_DURATION: ${GATELIN_REFRESH_TOKEN_DURATION}
+      REFRESH_TOKEN_COOKIE: ${GATELIN_REFRESH_TOKEN_COOKIE}
+      REFRESH_TOKEN_COOKIE_HTTPS_ONLY: "false" # dev stack is plain HTTP
+      # Enables the bundled Gatelin admin UI (roles, permissions, CORS…)
+      ADMIN_PORT: ${GATELIN_ADMIN_PORT}
+      ADMIN_BASE_PATH: ${GATELIN_ADMIN_BASE_PATH}
+      ADMIN_SSO_TOKEN_KEY: ${ADMIN_SSO_TOKEN_KEY:-}
+      ADMIN_PASSWORD_RECOVERY_URL: ${GATELIN_ADMIN_PASSWORD_RECOVERY_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gatelin_migration:
+        condition: service_completed_successfully
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      - "traefik.http.routers.gatelin.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.gatelin.entrypoints=web"
+      - "traefik.http.routers.gatelin.service=gatelin"
+      - "traefik.http.routers.gatelin.middlewares=strip-prefix"
+      - "traefik.http.middlewares.strip-prefix.stripprefix.prefixes=/api"
+      - "traefik.http.middlewares.strip-prefix.stripprefix.forceSlash=false"
+      - "traefik.http.services.gatelin.loadBalancer.server.port=${DEFAULT_PORT}"
+      - "traefik.http.routers.gatelin-admin.rule=PathPrefix(`${GATELIN_ADMIN_BASE_PATH}`)"
+      - "traefik.http.routers.gatelin-admin.entrypoints=web"
+      - "traefik.http.routers.gatelin-admin.service=gatelin-admin"
+      - "traefik.http.services.gatelin-admin.loadBalancer.server.port=${GATELIN_ADMIN_PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/gatelin/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  foxnox_migration:
+    image: ghcr.io/alten-group/foxnox-migration:${FOXNOX_VERSION}
+    container_name: ${FOXNOX_MIGRATION_HOST}
+    hostname: ${FOXNOX_MIGRATION_HOST}
+    environment:
+      TZ: ${TZ}
+      LIQUIBASE_COMMAND_USERNAME: ${LIQUIBASE_DB_USER}
+      LIQUIBASE_COMMAND_PASSWORD: ${LIQUIBASE_DB_PWD}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${FOXNOX_DB_NAME}
+      DB_USER: ${FOXNOX_DB_USER}
+      DB_PWD: ${FOXNOX_DB_PWD}
+      DB_JOB_USER: ${FOXNOX_DB_JOB_USER}
+      DB_JOB_PWD: ${FOXNOX_DB_JOB_PWD}
+      UPDATE: ${LIQUIBASE_UPDATE}
+      ROLLBACK: ${LIQUIBASE_ROLLBACK}
+      SNAPSHOT: snapshot/snapshot${LIQUIBASE_SNAPSHOT}
+      LIQUIBASE_LOG_LEVEL: ${LIQUIBASE_LOG_LEVEL}
+      LIQUIBASE_COMMAND_CONTEXTS: ${LIQUIBASE_COMMAND_CONTEXTS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
+  mailpit:
+    image: axllent/mailpit:${MAILPIT_VERSION:-latest}
+    container_name: ${MAILPIT_HOST}
+    hostname: ${MAILPIT_HOST}
+    ports:
+      - ${MAILPIT_UI_PORT:-8025}:8025
+    networks:
+      - internal
+      - external
+    restart: unless-stopped
+
+  foxnox:
+    image: ghcr.io/alten-group/foxnox:${FOXNOX_VERSION}
+    container_name: ${FOXNOX_HOST}
+    hostname: ${FOXNOX_HOST}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      foxnox_migration:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${DEFAULT_PORT}
+      TZ: ${TZ}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_NAME: ${FOXNOX_DB_NAME}
+      DB_USER: ${FOXNOX_DB_USER}
+      DB_PWD: ${FOXNOX_DB_PWD}
+      DB_JOB_USER: ${FOXNOX_DB_JOB_USER}
+      DB_JOB_PWD: ${FOXNOX_DB_JOB_PWD}
+      PWD_SECRET: ${FOXNOX_PWD_SECRET}
+      APP_NAME: ${APP_NAME}
+      ENV_NAME: ${ENV_NAME}
+      SERVER_SCHEME: ${SERVER_SCHEME}
+      SERVICE_NAME: ${FOXNOX_HOST}
+      ACCESS_TOKEN_DURATION: ${FOXNOX_ACCESS_TOKEN_DURATION}
+      REFRESH_TOKEN_DURATION: ${FOXNOX_REFRESH_TOKEN_DURATION}
+      WEB_PUBLIC_BASE: ${WEB_PUBLIC_BASE:-/api/foxnox/web}
+      WEB_PUBLIC_ORIGIN: ${WEB_PUBLIC_ORIGIN:-${SERVER_SCHEME}${SERVER_URL}:${TRAEFIK_PORT}}
+      WEB_LOGIN_RESUME_URL: ${WEB_LOGIN_RESUME_URL:-${SERVER_SCHEME}${SERVER_URL}:${TRAEFIK_PORT}/megadex/login}
+      USER_SEARCH_URL: ${MEGADEX_USER_SEARCH_URL}
+      SMTP_HOST: ${SMTP_HOST:-${MAILPIT_HOST}}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_FROM: ${SMTP_FROM:-Megadex <noreply@localhost>}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      # The published image runs NODE_ENV=production, where Foxnox validates
+      # ADMIN_PORT at boot and refuses to start without it.
+      ADMIN_PORT: ${FOXNOX_ADMIN_PORT}
+      ADMIN_BASE_PATH: ${FOXNOX_ADMIN_BASE_PATH:-/foxnox}
+      ADMIN_SSO_TOKEN_KEY: ${ADMIN_SSO_TOKEN_KEY:-}
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      # More specific than Gatelin's PathPrefix(`/api`) so /api/foxnox/* (password
+      # workflow pages) hits Foxnox.
+      - "traefik.http.routers.foxnox.rule=PathPrefix(`/api/foxnox`)"
+      - "traefik.http.routers.foxnox.priority=100"
+      - "traefik.http.routers.foxnox.entrypoints=web"
+      - "traefik.http.routers.foxnox.service=foxnox"
+      - "traefik.http.routers.foxnox.middlewares=strip-prefix"
+      - "traefik.http.services.foxnox.loadbalancer.server.port=${DEFAULT_PORT}"
+      - "traefik.http.routers.foxnox-admin.rule=PathPrefix(`${FOXNOX_ADMIN_BASE_PATH:-/foxnox}`)"
+      - "traefik.http.routers.foxnox-admin.entrypoints=web"
+      - "traefik.http.routers.foxnox-admin.service=foxnox-admin"
+      - "traefik.http.services.foxnox-admin.loadbalancer.server.port=${FOXNOX_ADMIN_PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/foxnox/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  megadex_migration:
+    build:
+      context: ${PWD}/db/liquibase
+      dockerfile: dockerfile
+      args:
+        LIQUIBASE_VERSION: ${LIQUIBASE_VERSION}
+    container_name: ${MEGADEX_MIGRATION_HOST}
+    hostname: ${MEGADEX_MIGRATION_HOST}
+    environment:
+      TZ: ${TZ}
+      LIQUIBASE_COMMAND_USERNAME: ${LIQUIBASE_DB_USER}
+      LIQUIBASE_COMMAND_PASSWORD: ${LIQUIBASE_DB_PWD}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${MEGADEX_DB_NAME}
+      DB_USER: ${MEGADEX_DB_USER}
+      DB_PWD: ${MEGADEX_DB_PWD}
+      DB_JOB_USER: ${MEGADEX_DB_JOB_USER}
+      DB_JOB_PWD: ${MEGADEX_DB_JOB_PWD}
+      UPDATE: ${LIQUIBASE_UPDATE}
+      ROLLBACK: ${LIQUIBASE_ROLLBACK}
+      SNAPSHOT: snapshot/snapshot${LIQUIBASE_SNAPSHOT}
+      LIQUIBASE_LOG_LEVEL: ${LIQUIBASE_LOG_LEVEL}
+      LIQUIBASE_COMMAND_CONTEXTS: ${LIQUIBASE_COMMAND_CONTEXTS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    volumes:
+      - ${PWD}/db/liquibase/megadex/:/liquibase/changelog
+      - ${PWD}/db/liquibase/data/:/liquibase/data
+
+  megadex:
+    build:
+      context: ${PWD}
+      dockerfile: dockerfile
+      args:
+        UID: ${UID}
+        GID: ${GID}
+        TZ: ${TZ}
+        NODE_VERSION: ${NODE_VERSION}
+        NODE_ENV: ${NODE_ENV}
+    image: megadex:${NODE_ENV:-development}
+    container_name: ${MEGADEX_HOST}
+    hostname: ${MEGADEX_HOST}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      megadex_migration:
+        condition: service_completed_successfully
+    environment:
+      PORT: ${DEFAULT_PORT}
+      TZ: ${TZ}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_NAME: ${MEGADEX_DB_NAME}
+      DB_USER: ${MEGADEX_DB_USER}
+      DB_PWD: ${MEGADEX_DB_PWD}
+      DB_JOB_USER: ${MEGADEX_DB_JOB_USER}
+      DB_JOB_PWD: ${MEGADEX_DB_JOB_PWD}
+      APP_NAME: ${APP_NAME}
+      ENV_NAME: ${ENV_NAME}
+      SERVER_SCHEME: ${SERVER_SCHEME}
+      SERVICE_NAME: ${MEGADEX_HOST}
+    networks:
+      internal:
+        # Gatelin's core seed proxies /api/users/* to `${APP_NAME}-ms-user-mock-${ENV_NAME}`
+        # (service `ms-user-mock`): Megadex serves those /users/* routes.
+        aliases:
+          - ${APP_NAME}-ms-user-mock-${ENV_NAME}
+    volumes:
+      - ${PWD}/src:/usr/src/app/src
+      - ${PWD}/tests:/usr/src/app/tests
+      - ${PWD}/jest.config.js:/usr/src/app/jest.config.js
+      - ${PWD}/babel.config.json:/usr/src/app/babel.config.json
+      - ${PWD}/package.json:/usr/src/app/package.json
+      - megadex_node_modules:/usr/src/app/node_modules
+    # No public Traefik router: Megadex sits behind Gatelin (Traefik /api -> Gatelin ->
+    # megadex), which authenticates the caller and injects the x-consumer-* headers.
+    healthcheck: *healthcheck
+
+  admin:
+    build:
+      context: ${PWD}/admin
+      dockerfile: dockerfile
+      <<: *secretArgs
+      args:
+        <<: *defaultArgs
+        NODE_VERSION: ${ADMIN_NODE_VERSION}
+    secrets: *secretMount
+    container_name: ${ADMIN_HOST}
+    hostname: ${ADMIN_HOST}
+    environment:
+      <<: *defaultEnvs
+      # ng serve reads $PORT and overrides --port; keep it aligned with ADMIN_PORT
+      # so Traefik's loadbalancer.server.port target actually has a listener.
+      PORT: ${ADMIN_PORT}
+      ADMIN_SSO_TOKEN_KEY: ${ADMIN_SSO_TOKEN_KEY:-}
+    networks:
+      - internal
+    volumes:
+      - ${PWD}/admin:/usr/src/app
+      - admin_node_modules:/usr/src/app/node_modules
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      - "traefik.http.routers.admin.rule=PathPrefix(`/megadex`)"
+      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.routers.admin.service=admin"
+      - "traefik.http.services.admin.loadbalancer.server.port=${ADMIN_PORT}"
+
+  # Playwright suite, on demand only (`scripts/e2e.sh`, or `docker compose --profile
+  # e2e run --rm admin-e2e`). Drives the admin UI through Traefik, exercising
+  # the same routing path a real browser hits.
+  admin-e2e:
+    profiles: ["e2e"]
+    build:
+      context: ${PWD}/admin
+      dockerfile: e2e-dockerfile
+      args:
+        PLAYWRIGHT_VERSION: ${PLAYWRIGHT_VERSION}
+        TZ: ${TZ}
+    container_name: ${ADMIN_E2E_HOST}
+    hostname: ${ADMIN_E2E_HOST}
+    environment:
+      # Overrides playwright.config.ts's `http://localhost:8100/megadex/` default
+      # since localhost inside this container is the container itself.
+      E2E_BASE_URL: ${ADMIN_E2E_BASE_URL}
+      E2E_EMAIL: ${E2E_EMAIL:-}
+      E2E_PASSWORD: ${E2E_PASSWORD:-}
+      CI: "1"
+      TZ: ${TZ}
+    networks:
+      - internal
+    depends_on:
+      - admin
+      - megadex
+      - gatelin
+      - traefik
+    volumes:
+      - ${PWD}/admin/e2e:/repo/admin/e2e:ro
+      - ${PWD}/admin/playwright.config.ts:/repo/admin/playwright.config.ts:ro
+      # Test artifacts land back on the host next to admin/e2e/ where the .gitignore
+      # already covers them.
+      - ${PWD}/admin/test-results:/repo/admin/test-results
+      - ${PWD}/admin/playwright-report:/repo/admin/playwright-report
+
+  swagger:
+    build:
+      context: ${PWD}/swagger
+      dockerfile: dockerfile
+      args:
+        UID: ${UID}
+        GID: ${GID}
+        TZ: ${TZ}
+        NODE_VERSION: ${NODE_VERSION}
+        NODE_ENV: ${NODE_ENV}
+    container_name: ${SWAGGER_HOST}
+    hostname: ${SWAGGER_HOST}
+    environment:
+      SERVICE_NAME: ${SWAGGER_HOST}
+      PORT: ${DEFAULT_PORT}
+      BASE_PATH: /swagger
+    volumes:
+      - ${PWD}/swagger/src:/usr/src/app/src
+      - swagger_node_modules:/usr/src/app/node_modules
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      - "traefik.http.routers.swagger.rule=PathPrefix(`/swagger`)"
+      - "traefik.http.routers.swagger.entrypoints=web"
+      - "traefik.http.routers.swagger.service=swagger"
+      - "traefik.http.services.swagger.loadbalancer.server.port=${DEFAULT_PORT}"
+
+  adminer:
+    image: ${ADMINER_VERSION}
+    container_name: ${ADMINER_HOST}
+    hostname: ${ADMINER_HOST}
+    environment:
+      ADMINER_DEFAULT_SERVER: ${POSTGRES_HOST}
+      ADMINER_DEFAULT_DRIVER: pgsql
+      ADMINER_DESIGN: pappu687
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      - "traefik.http.routers.adminer.rule=PathPrefix(`/adminer`)"
+      - "traefik.http.routers.adminer.entrypoints=web"
+      - "traefik.http.routers.adminer.service=adminer"
+      - "traefik.http.routers.adminer.middlewares=adminer-stripprefix"
+      - "traefik.http.services.adminer.loadbalancer.server.port=${ADMINER_PORT}"
+      - "traefik.http.middlewares.adminer-stripprefix.stripprefix.prefixes=/adminer"
+      - "traefik.http.middlewares.adminer-stripprefix.stripprefix.forceSlash=false"
+
+networks:
+  internal:
+    name: ${APP_NAME}-internal-${ENV_NAME}
+    driver: bridge
+  external:
+    name: ${APP_NAME}-external-${ENV_NAME}
+    driver: bridge
+
+secrets:
+  apk_repository:
+    environment: APK_REPOSITORY
+  apt_repository:
+    environment: APT_REPOSITORY
+  npmrc:
+    environment: NPMRC
+
+volumes:
+  postgres_data:
+    driver: local
+  megadex_node_modules:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/node_modules
+  admin_node_modules:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/admin/node_modules
+  swagger_node_modules:

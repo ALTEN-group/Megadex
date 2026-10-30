@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+  <!-- Registers Megadex's own routes into Gatelin's database (mounted as gatelin_migration's optional /liquibase/data volume) -->
+
+  <changeSet id="megadex-data-01" author="lcluber">
+    <comment>Megadex service</comment>
+    <sqlFile path="01-service.sql"/>
+  </changeSet>
+  <changeSet id="megadex-data-02" author="lcluber">
+    <comment>Megadex resources</comment>
+    <sqlFile path="02-resource.sql"/>
+  </changeSet>
+  <changeSet id="megadex-data-03" author="lcluber">
+    <comment>Megadex routes</comment>
+    <sqlFile path="03-route.sql"/>
+  </changeSet>
+  <changeSet id="megadex-data-04" author="lcluber">
+    <comment>Megadex route permissions for Super admin / Admin</comment>
+    <sqlFile path="04-permission.sql"/>
+  </changeSet>
+  <changeSet id="megadex-data-05" author="lcluber" runOnChange="true">
+    <comment>Allowed browser Origins for the admin UI (CORS whitelist)</comment>
+    <sqlFile path="05-cors.sql"/>
+  </changeSet>
+
+</databaseChangeLog>
