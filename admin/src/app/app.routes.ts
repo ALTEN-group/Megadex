@@ -18,7 +18,6 @@ const ENTITY_PATHS = Object.fromEntries(
  */
 export const AppPaths = {
   LOGIN: "login",
-  HOME: "home",
   NOT_FOUND: "not-found",
   UNAUTHORIZED: "unauthorized",
   ...ENTITY_PATHS,
@@ -31,15 +30,6 @@ export const ROUTES: Routes = [
       import("./login/login.routes").then((m) => m.AUTH_ROUTES),
     title: "Connexion",
     canActivate: [loginGuard()],
-  },
-  {
-    path: AppPaths.HOME,
-    loadComponent: () =>
-      import("./core/pages/home/home.component").then((m) => m.HomeComponent),
-    title: "Accueil",
-    data: {
-      breadcrumb: $localize`:@@Home_homeNav:Accueil`,
-    },
   },
   {
     path: AppPaths.USERS,
@@ -73,6 +63,19 @@ export const ROUTES: Routes = [
     },
   },
   {
+    path: AppPaths.AUDITLOGS,
+    loadComponent: () =>
+      import("./audit/features/audit-logs/audit-logs.component").then(
+        (m) => m.AuditLogsComponent,
+      ),
+    title: "Audit log",
+    canActivate: [aclGuard()],
+    data: {
+      breadcrumb: $localize`:@@Admin_AuditLogsNav:Audit log`,
+      functionality: AppPaths.AUDITLOGS,
+    },
+  },
+  {
     path: AppPaths.UNAUTHORIZED,
     loadComponent: () =>
       import("./core/pages/unauthorized/unauthorized.component").then(
@@ -93,7 +96,7 @@ export const ROUTES: Routes = [
   },
   {
     path: "",
-    redirectTo: `/${AppPaths.HOME}`,
+    redirectTo: `/${AppPaths.USERS}`,
     pathMatch: "full",
   },
   {

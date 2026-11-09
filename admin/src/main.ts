@@ -22,10 +22,10 @@ import { MegadexPreset } from "@core/app-config/primeng-preset";
 import { authInterceptor } from "@core/auth/auth.interceptor";
 import { errorInterceptor } from "@core/interceptors/error.interceptor";
 import { locationInterceptor } from "@core/interceptors/location.interceptor";
-import { ROUTES } from "app/app.routes";
 import { ConfirmationService, MessageService } from "@openng/optimus-ui/api";
 import { provideOptimus } from "@openng/optimus-ui/config";
 import { DialogService } from "@openng/optimus-ui/dynamicdialog";
+import { ROUTES } from "app/app.routes";
 import { AppComponent } from "./app/app.component";
 import { environment } from "./environments/environment";
 

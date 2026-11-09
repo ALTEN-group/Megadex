@@ -20,9 +20,14 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-# Load container names from .env.dev.
-source "$(dirname "${BASH_SOURCE[0]}")/lib/load-env.sh"
-load_env_file "$ENV_FILE"
+# Load container names from .env.dev (same approach as setup-mocks.sh).
+ENV_TMP=$(mktemp)
+grep -v '^#' "$ENV_FILE" | grep -v '^UID=' > "$ENV_TMP"
+set -a
+# shellcheck disable=SC1090
+source "$ENV_TMP"
+set +a
+rm -f "$ENV_TMP"
 
 : "${POSTGRES_HOST:?POSTGRES_HOST missing from $ENV_FILE}"
 : "${MEGADEX_MIGRATION_HOST:?MEGADEX_MIGRATION_HOST missing from $ENV_FILE}"

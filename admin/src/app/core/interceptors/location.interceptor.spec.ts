@@ -9,8 +9,8 @@ import {
 } from "@angular/common/http/testing";
 import { TestBed } from "@angular/core/testing";
 import { SnackbarService } from "@core/utils/snackbar/snackbar.service";
-import { LocationInterceptorService } from "./location-interceptor.service";
 import { locationInterceptor } from "./location.interceptor";
+import { LocationInterceptorService } from "./location-interceptor.service";
 
 describe("locationInterceptor", () => {
   let http: HttpClient;

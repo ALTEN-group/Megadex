@@ -12,7 +12,7 @@ BEGIN
     UPDATE %I 
     SET 
       "archivedAt" = CASE WHEN $2 = TRUE AND $3 = FALSE
-                          THEN NOW()::timestamp
+                          THEN NOW()
                      ELSE "archivedAt"
                      END,
       archived = COALESCE($2, archived)

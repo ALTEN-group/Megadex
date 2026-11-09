@@ -10,7 +10,7 @@
 --   92=searchSocials    93=getSocialHistory  94=addSocials   95=updateSocials
 --   96=archiveSocials   97=getSocialSchema
 --   98=searchCountries  99=getCountrySchema  100=searchCivilities 101=getCivilitySchema
---   102=searchGenders   103=getGenderSchema
+--   102=searchGenders   103=getGenderSchema  104=searchAudit  105=updateOwnProfile
 -- Keep admin/src/app/core/app-config/app.acls.ts in sync with this order.
 --
 
@@ -24,7 +24,7 @@ INSERT INTO routes ("resourceId", pattern, name, description, protected, core, "
   ((SELECT id FROM resource WHERE name = 'megadex/users'), '/schema', 'getUserSchema', 'Get user entity schema', true, false, ARRAY[2], ARRAY[1], -1, 'system'),
 
   -- table-view preferences (/megadex/preferences, served by Megadex's own routes/preference.js)
-  -- :resource is the admin entity id (users, socials)
+  -- :resource is the admin entity id (users, socials, auditLogs)
   ((SELECT id FROM resource WHERE name = 'megadex/preferences'), '/(?<resource>[A-Za-z]+)', 'getMegadexPreferences', 'Get table view preferences', true, false, ARRAY[2], ARRAY[1], -1, 'system'),
   ((SELECT id FROM resource WHERE name = 'megadex/preferences'), '/(?<resource>[A-Za-z]+)', 'addMegadexPreferences', 'Create table view preferences', true, false, ARRAY[7], ARRAY[2], -1, 'system'),
   ((SELECT id FROM resource WHERE name = 'megadex/preferences'), '/(?<resource>[A-Za-z]+)', 'updateMegadexPreferences', 'Update table view preferences', true, false, ARRAY[5], ARRAY[3], -1, 'system'),
@@ -48,5 +48,11 @@ INSERT INTO routes ("resourceId", pattern, name, description, protected, core, "
 
   -- genders (/megadex/genders)
   ((SELECT id FROM resource WHERE name = 'megadex/genders'), '/search', 'searchGenders', 'Search genders', true, false, ARRAY[2], ARRAY[2], -1, 'system'),
-  ((SELECT id FROM resource WHERE name = 'megadex/genders'), '/schema', 'getGenderSchema', 'Get gender entity schema', true, false, ARRAY[2], ARRAY[1], -1, 'system')
+  ((SELECT id FROM resource WHERE name = 'megadex/genders'), '/schema', 'getGenderSchema', 'Get gender entity schema', true, false, ARRAY[2], ARRAY[1], -1, 'system'),
+
+  -- audit log (/megadex/audit, served by Megadex's own routes/audit.js; granted to Super admin and Admin by 04-permission.sql)
+  ((SELECT id FROM resource WHERE name = 'megadex/audit'), '/search', 'searchAudit', 'Search the audit log', true, false, ARRAY[2], ARRAY[2], -1, 'system'),
+
+  -- self-service profile update (/megadex/users/me; appended at the end so existing route IDs stay stable)
+  ((SELECT id FROM resource WHERE name = 'megadex/users'), '/me', 'updateOwnProfile', 'Update authenticated user profile', true, false, ARRAY[5], ARRAY[3], -1, 'system')
 ON CONFLICT DO NOTHING;

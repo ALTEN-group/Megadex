@@ -1,7 +1,7 @@
 {
   "name": "megadex-swagger",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0-alpha.1",
+  "description": "Megadex OpenAPI documentation server",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
@@ -13,13 +13,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DWTechs/megadex.git",
+    "url": "git+https://github.com/ALTEN-group/Megadex.git",
     "directory": "swagger"
   },
   "bugs": {
-    "url": "https://github.com/DWTechs/megadex/issues"
+    "url": "https://github.com/ALTEN-group/Megadex/issues"
   },
-  "homepage": "https://github.com/DWTechs/megadex#readme",
+  "homepage": "https://github.com/ALTEN-group/Megadex#readme",
   "dependencies": {
     "@dwtechs/winstan": "0.4.0",
     "swagger-jsdoc": "6.2.8",

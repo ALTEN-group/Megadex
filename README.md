@@ -1,47 +1,46 @@
-﻿# Gatelin
+# Megadex
 
-[![Coverage](https://raw.githubusercontent.com/ALTEN-group/Gatelin/badges/badges/coverage.svg)](https://github.com/ALTEN-group/Gatelin/actions/workflows/test.yml)
-[![admin coverage](https://raw.githubusercontent.com/ALTEN-group/Gatelin/badges/badges/admin-coverage.svg)](https://github.com/ALTEN-group/Gatelin/actions/workflows/test.yml)
+[![Coverage](https://raw.githubusercontent.com/ALTEN-group/Megadex/badges/badges/coverage.svg)](https://github.com/ALTEN-group/Megadex/actions/workflows/test.yml)
+[![admin coverage](https://raw.githubusercontent.com/ALTEN-group/Megadex/badges/badges/admin-coverage.svg)](https://github.com/ALTEN-group/Megadex/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Version](https://img.shields.io/github/v/release/ALTEN-group/Gatelin)](https://github.com/ALTEN-group/Gatelin/releases/latest)
-[![Last release](https://img.shields.io/github/release-date/ALTEN-group/Gatelin)](https://github.com/ALTEN-group/Gatelin/releases/latest)
+[![Version](https://img.shields.io/github/v/release/ALTEN-group/Megadex)](https://github.com/ALTEN-group/Megadex/releases/latest)
+[![Last release](https://img.shields.io/github/release-date/ALTEN-group/Megadex)](https://github.com/ALTEN-group/Megadex/releases/latest)
 
-Backend for Frontend (BFF) for your application: JWT sessions, role-based access control, and authenticated forwarding to internal microservices. Put Gatelin behind an edge reverse proxy (Traefik, nginx, Envoy) — that proxy is the public gateway; Gatelin is the app’s API layer.
+User profile, preferences, and reference-data service: user accounts with aggregated roles and social network links, per-user table view preferences, and localized reference lookups. Megadex is an internal user store: put a Backend for Frontend in front of it as the public API layer. [Gatelin](https://gatelin.fr) is one such BFF, not a requirement.
 
 ## Images
 
 | Image | Registry |
 |---|---|
-| BFF (includes Admin UI under `/admin`) | `ghcr.io/alten-group/gatelin` |
-| Migration | `ghcr.io/alten-group/gatelin-migration` |
+| API (includes Admin UI under `/megadex`) | `ghcr.io/alten-group/megadex` |
+| Migration | `ghcr.io/alten-group/megadex-migration` |
 
 ## Features
 
-- **Proxy** — Dynamic route matching and forwarding to target microservices
-- **Authentication** — Consumer session management with JWT access and refresh token issuance, validation, and refresh
-- **Authorization** — Role-based access control (RBAC/ACL) validation per route, per property, per condition...
-- **Route management** — Organize and control endpoints (applications, services, resources, routes, methods, operations)
-- **Role management** — Define, scope, and assign permissions to application roles
-- **Permission management** — Granular operation access (GET, POST, etc.) per API, route, with optional condition and field restrictions
-- **CORS management** — Control allowed origins
-- **Admin UI** — Angular-based front-end to manage sessions, routes, roles, and ACL
+- **User profiles** — Manage user identities, contact information, consents, and active/archive lifecycle
+- **Roles & social links** — Aggregate user role assignments (`roles`) and social network handles (`socialsJsonAgg`) directly onto user records
+- **Social networks catalog** — Manage supported social platforms (`socials`) with history tracking and soft archiving
+- **Table view preferences** — Per-user saved grid configurations (`preferences`) merged with locked system templates
+- **Reference lookups** — Localized read-only catalogs for countries (`countries`), civilities (`civilities`), and genders (`genders`)
+- **History & audit logs** — Database-level change tracking (`user`, `user_role`, `user_social`, `social`) and unified `log.audit` view
+- **Admin UI** — Angular front-end to manage users, social network catalogs, and audit logs
 
 ## Documentation
 
-Full documentation is available at **[https://gatelin.fr](https://gatelin.fr)**.
+Full documentation is available at **[https://alten-group.github.io/Megadex](https://alten-group.github.io/Megadex)**.
 
 ## Quick Start for off the shelf usage
 
-Integrate Gatelin into your application using published Docker images : 
-- [Integration Guide](https://gatelin.fr/guide/integration)
-- [Frontend Integration Guide](https://gatelin.fr/guide/frontend)
+Integrate Megadex into your application using published Docker images :
+- [Integration Guide](https://alten-group.github.io/Megadex/guide/integration)
+- [Frontend Integration Guide](https://alten-group.github.io/Megadex/guide/frontend)
 
 ## Quick Start for contributors
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/dwtechs/megadex.git
-cd megadex
+git clone https://github.com/ALTEN-group/Megadex.git
+cd Megadex
 
 # 2. Generate the development environment file
 bash scripts/setup-env.sh
@@ -49,14 +48,10 @@ bash scripts/setup-env.sh
 # 3. Start the stack (Gatelin + Foxnox + Megadex). Dev user passwords are seeded
 #    and printed on first start; rotate them with `bash scripts/setup-mocks.sh`.
 bash scripts/start-dev.sh
-#    Megadex admin: http://localhost:8100/megadex/
-#    Gatelin admin: http://localhost:8100/gatelin/  (roles, permissions, CORS)
-#    Foxnox admin:  http://localhost:8100/foxnox/   (password policies)
-#    Swagger:       http://localhost:8100/swagger/
-#    Mailpit:       http://localhost:8025/
-
-# 4. Optional: run the admin e2e suite
-bash scripts/e2e.sh
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development workflow, testing, and production build instructions.
+
+## License
+
+MIT — see [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md). Published and maintained by ALTEN.

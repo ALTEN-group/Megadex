@@ -1,8 +1,8 @@
 import { inject } from "@angular/core";
 import {
   ArchiveInfo,
-  createAuditConfig,
   CRUD_LABELS,
+  createAuditConfig,
   StrictCrudItemOptions,
 } from "@dwtechs/ngx-crud-builder";
 

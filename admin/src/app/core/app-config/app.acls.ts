@@ -14,6 +14,7 @@ import { EntityRouteMapping } from "@core/acl/acls.model";
  *   92=searchSocials    93=getSocialHistory  94=addSocials   95=updateSocials
  *   96=archiveSocials   97=getSocialSchema
  *   98-103=countries / civilities / genders lookups (search + schema)
+ *   104=searchAudit     105=updateOwnProfile
  */
 export const ENTITY_ROUTE_MAPPING: EntityRouteMapping = {
   users: {
@@ -29,5 +30,8 @@ export const ENTITY_ROUTE_MAPPING: EntityRouteMapping = {
     create: 94, // addSocials
     update: 95, // updateSocials
     archive: 96, // archiveSocials
+  },
+  auditLogs: {
+    get: 104, // searchAudit (db/liquibase/gatelin-data/03-route.sql)
   },
 };

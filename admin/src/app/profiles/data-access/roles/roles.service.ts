@@ -1,6 +1,7 @@
 import { HttpClient } from "@angular/common/http";
-import { inject, Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { APP_CONFIG } from "@core/app-config/app-config.token";
+import { readAdminRuntimeConfig } from "@core/app-config/runtime-config";
 import { Role } from "app/profiles/data-access/roles/role.model";
 import { catchError, map, Observable, of, shareReplay } from "rxjs";
 
@@ -12,7 +13,9 @@ import { catchError, map, Observable, of, shareReplay } from "rxjs";
 })
 export class RolesService {
   private readonly http = inject(HttpClient);
-  private readonly searchUrl = `${inject(APP_CONFIG).gatelinApi}roles/search`;
+  private readonly searchUrl =
+    readAdminRuntimeConfig().rolesSearchUrl?.trim() ||
+    `${inject(APP_CONFIG).gatelinApi}roles/search`;
   private all$: Observable<Role[]> | null = null;
 
   public getAndCacheAll(): Observable<Role[]> {

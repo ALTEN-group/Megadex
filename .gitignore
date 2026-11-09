@@ -7,15 +7,13 @@ src/public/*
 tests/coverage/
 docker/conf/.env.dev
 docker/conf/.env.prod
-swagger/src/megadex.openapi.json
 website/docs/.vitepress/cache
 website/docs/.vitepress/dist
-.github/instructions/
-.github/agents/
-.agents/
-.cursor/
-mocks/ms_pwd/src/data/credentials.js
-swagger/src/gatelin.openapi.json
-apm_modules/
+swagger/src/megadex.openapi.json
+admin/demos/videos/
+tests/perf/results/*.json
 tests/restler/results/*
 **/__pycache__/
+
+# Local agent-package artifacts (not part of the public toolchain)
+apm_modules/

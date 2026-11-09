@@ -3,7 +3,7 @@ import { TestBed } from "@angular/core/testing";
 import { ActivatedRouteSnapshot, GuardResult, Router } from "@angular/router";
 import { AclService } from "@core/acl/acl.service";
 import { AuthenticationService } from "@core/auth/auth.service";
-import { Observable, isObservable, of } from "rxjs";
+import { isObservable, Observable, of } from "rxjs";
 import { aclGuard } from "./acl.guard";
 
 describe("aclGuard", () => {
@@ -36,9 +36,7 @@ describe("aclGuard", () => {
       data: { functionality },
     } as unknown as ActivatedRouteSnapshot;
 
-    return TestBed.runInInjectionContext(() =>
-      aclGuard()(route, {} as never),
-    );
+    return TestBed.runInInjectionContext(() => aclGuard()(route, {} as never));
   }
 
   function readResult(result: GuardResult | Observable<GuardResult>) {
@@ -64,18 +62,18 @@ describe("aclGuard", () => {
   it("allows access when ACL check passes", () => {
     aclService.hasAccess.mockReturnValue(true);
 
-    expect(readResult(runGuard() as GuardResult | Observable<GuardResult>)).toBe(
-      true,
-    );
+    expect(
+      readResult(runGuard() as GuardResult | Observable<GuardResult>),
+    ).toBe(true);
     expect(aclService.enrichAclWithSchema).toHaveBeenCalledWith("users");
   });
 
   it("redirects to unauthorized when ACL check fails", () => {
     aclService.hasAccess.mockReturnValue(false);
 
-    expect(readResult(runGuard() as GuardResult | Observable<GuardResult>)).toBe(
-      false,
-    );
+    expect(
+      readResult(runGuard() as GuardResult | Observable<GuardResult>),
+    ).toBe(false);
     expect(router.navigate).toHaveBeenCalledWith(["/unauthorized"]);
   });
 });

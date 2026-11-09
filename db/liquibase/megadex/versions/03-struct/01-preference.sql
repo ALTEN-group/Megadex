@@ -4,10 +4,10 @@
 CREATE TABLE preference (
   id              SERIAL      PRIMARY KEY,
   "userId"        INT         NULL,
-  "resourceName"  VARCHAR(20) NOT NULL CHECK ("resourceName" IN ('users', 'socials')),
+  "resourceName"  VARCHAR(20) NOT NULL CHECK ("resourceName" IN ('users', 'socials', 'auditLogs')),
   name            VARCHAR(60) NOT NULL,
   conf            JSONB       NOT NULL,
-  "createdAt"     TIMESTAMPTZ DEFAULT NOW(),
+  "createdAt"     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "creatorId"     INT,
   "creatorName"   TEXT,
   "updatedAt"     TIMESTAMPTZ NULL,

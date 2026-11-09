@@ -16,8 +16,8 @@ export default new SQLEntity("preferences", [
     max: 20,
   }),
   p("name", "string", rw, { requiredFor: ["POST", "PUT"], min: 1, max: 60 }),
-  p("conf", "object", rw, { requiredFor: ["POST"], filterable: false }),
-  p("locked", "boolean", ["SELECT"], { typeChecked: false }),
+  p("conf", "json", rw, { requiredFor: ["POST"], filterable: false }),
+  p("locked", "boolean", ["SELECT"], { typeChecked: false, filterable: true }),
   p("isActive", "boolean", ["INSERT", "UPDATE"], {
     requiredFor: ["POST", "PUT"],
     typeChecked: false,

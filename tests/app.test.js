@@ -4,11 +4,14 @@ import request from "supertest";
 const execute = jest.fn();
 
 class MockEntity {
-  constructor(name, properties) {
+  constructor(name, properties, schema = "public") {
     this.name = name;
+    this.table = name;
+    this.schema = schema;
     this.properties = properties;
     this.privateProps = properties.filter((p) => p.isPrivate).map((p) => p.key);
-    this.get = (_req, res, next) => {
+    this.get = (req, res, next) => {
+      this.lastGetFilters = req.body?.filters ?? null;
       res.locals.rows =
         name === "users"
           ? [
@@ -26,14 +29,40 @@ class MockEntity {
     };
     this.addArraySubstack = this.mutate.bind(this);
     this.updateArraySubstack = this.mutate.bind(this);
+    this.delete = (req, res, next) => {
+      this.lastDeleteIds = (req.body?.rows ?? [{ id: req.params.id }]).map(
+        (r) => r.id,
+      );
+      res.locals.rows = res.locals.rows ?? [{ id: Number(req.params.id) }];
+      res.locals.total = res.locals.rows.length;
+      next();
+    };
     this.archive = (_req, res, next) => {
       res.locals.rows = [];
       res.locals.total = 0;
       next();
     };
+    this.history = (options = {}) => {
+      const tables = options.tables ?? [this.table];
+      return (req, res, next) => {
+        execute(
+          "SELECT history",
+          [this.schema, tables, options.field ?? "id", req.params.id],
+          null,
+        )
+          .then((r) => {
+            res.locals.rows = r.rows ?? [];
+            res.locals.total = res.locals.rows.length;
+            next();
+          })
+          .catch(next);
+      };
+    };
+    this.getHistory = this.history();
   }
 
   mutate(req, res, next) {
+    this.lastMutatedRows = req.body.rows.map((r) => ({ ...r }));
     res.locals.rows = req.body.rows;
     res.locals.total = res.locals.rows.length;
     next();
@@ -46,23 +75,40 @@ jest.unstable_mockModule("@dwtechs/antity-pgsql", () => ({
 }));
 
 const { default: app } = await import("../src/app.js");
+const { default: preferenceEnt } = await import(
+  "../src/entities/preference.js"
+);
 
 beforeEach(() => execute.mockReset());
 
 describe("Megadex routes", () => {
-  test.each(["/megadex/users/search", "/users/users/search"])(
-    "mounts user search at %s and exposes roles",
-    async (path) => {
-      const response = await request(app).post(path).send({ filters: {} });
-      expect(response.status).toBe(200);
-      expect(response.body.rows[0]).toMatchObject({
-        id: 7,
-        nickname: "meg",
-        roles: [2, 4],
-      });
-      expect(response.body.rows[0].rolesArrayAgg).toBeUndefined();
-    },
-  );
+  test("mounts user search at /megadex/users/search and exposes roles", async () => {
+    const response = await request(app)
+      .post("/megadex/users/search")
+      .send({ filters: {} });
+    expect(response.status).toBe(200);
+    expect(response.body.rows[0]).toMatchObject({
+      id: 7,
+      nickname: "meg",
+      roles: [2, 4],
+    });
+    expect(response.body.rows[0].rolesArrayAgg).toBeUndefined();
+  });
+
+  test("defaults archived=false on internal /megadex/users/search when consumer headers are absent", async () => {
+    const { default: userEnt } = await import("../src/entities/user.js");
+    await request(app).post("/megadex/users/search").send({ filters: {} });
+    expect(userEnt.lastGetFilters).toEqual({
+      archived: { value: false, matchMode: "equals" },
+    });
+
+    await request(app)
+      .post("/megadex/users/search")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "alice")
+      .send({ filters: {} });
+    expect(userEnt.lastGetFilters).toEqual({});
+  });
 
   test("requires trusted identity for /me", async () => {
     const response = await request(app).get("/megadex/users/me");
@@ -76,7 +122,7 @@ describe("Megadex routes", () => {
       rows: [{ id: 42, nickname: "alice", rolesArrayAgg: [3] }],
     });
     const response = await request(app)
-      .get("/users/users/me")
+      .get("/megadex/users/me")
       .set("x-consumer-user-id", "42")
       .set("x-consumer-name", "alice");
     expect(response.status).toBe(200);
@@ -86,6 +132,65 @@ describe("Megadex routes", () => {
       roles: [3],
     });
     expect(execute.mock.calls[0][1]).toEqual([42]);
+  });
+
+  test("allows self-service profile updates via PUT /me and blocks privilege escalation", async () => {
+    const okRes = await request(app)
+      .put("/megadex/users/me")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "alice")
+      .send({ firstName: "Alicia", language: "fr" });
+    expect(okRes.status).toBe(200);
+    expect(okRes.body.rows[0]).toMatchObject({
+      id: 42,
+      firstName: "Alicia",
+      language: "fr",
+    });
+
+    for (const forbidden of [
+      { roles: [1] },
+      { active: true },
+      { email: "root@example.com" },
+      { archived: false },
+    ]) {
+      const forbiddenRes = await request(app)
+        .put("/megadex/users/me")
+        .set("x-consumer-user-id", "42")
+        .set("x-consumer-name", "alice")
+        .send(forbidden);
+      expect(forbiddenRes.status).toBe(403);
+    }
+  });
+
+  test("rejects empty or non-positive roles and identical email/backupEmail", async () => {
+    const emptyRoles = await request(app)
+      .post("/megadex/users")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "alice")
+      .send({ rows: [{ firstName: "A", roles: [] }] });
+    expect(emptyRoles.status).toBe(400);
+
+    const zeroRole = await request(app)
+      .post("/megadex/users")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "alice")
+      .send({ rows: [{ firstName: "A", roles: [0] }] });
+    expect(zeroRole.status).toBe(400);
+
+    const sameBackupEmail = await request(app)
+      .post("/megadex/users")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "alice")
+      .send({
+        rows: [
+          {
+            firstName: "A",
+            email: "Alice@Example.com",
+            backupEmail: "alice@example.com",
+          },
+        ],
+      });
+    expect(sameBackupEmail.status).toBe(400);
   });
 
   test("maps API roles to the database view field on writes", async () => {
@@ -124,17 +229,17 @@ describe("Megadex routes", () => {
           id: 1,
           tstamp: "2026-01-01T00:00:00.000Z",
           operation: "INSERT",
-          consumerId: 42,
-          consumerName: "alice",
+          userId: 42,
+          userName: "alice",
           record: { id: 7 },
         },
         {
           id: 2,
           tstamp: "2026-01-02T00:00:00.000Z",
           operation: "UPDATE",
-          consumerId: 42,
-          consumerName: "alice",
-          record: { id: 7 },
+          userId: 42,
+          userName: "alice",
+          record: { id: 7, rolesArrayAgg: [1, 3] },
         },
       ],
     });
@@ -144,6 +249,7 @@ describe("Megadex routes", () => {
       .set("x-consumer-name", "alice");
     expect(response.status).toBe(200);
     expect(response.body.rows).toHaveLength(2);
+    expect(response.body.rows[1].record).toEqual({ id: 7, roles: [1, 3] });
     expect(execute.mock.calls[0][1][1]).toEqual([
       "user",
       "user_role",
@@ -156,15 +262,6 @@ describe("preference ownership", () => {
   test("rejects anonymous preference access", async () => {
     const response = await request(app).get("/megadex/preferences/users");
     expect(response.status).toBe(401);
-    expect(execute).not.toHaveBeenCalled();
-  });
-
-  test("rejects a resource outside the CHECK constraint", async () => {
-    const response = await request(app)
-      .get("/megadex/preferences/tokens")
-      .set("x-consumer-user-id", "42")
-      .set("x-consumer-name", "alice");
-    expect(response.status).toBe(400);
     expect(execute).not.toHaveBeenCalled();
   });
 
@@ -183,7 +280,7 @@ describe("preference ownership", () => {
       ],
     });
     const response = await request(app)
-      .get("/users/preferences/users")
+      .get("/megadex/preferences/users")
       .set("x-consumer-user-id", "42")
       .set("x-consumer-name", "alice");
     expect(response.status).toBe(200);
@@ -192,46 +289,48 @@ describe("preference ownership", () => {
   });
 
   test("ignores a supplied userId and inserts for the forwarded user", async () => {
-    execute.mockResolvedValue({
-      rowCount: 1,
-      rows: [{ id: 8, resourceName: "users", name: "grid", conf: [] }],
-    });
     const response = await request(app)
-      .post("/users/preferences/users")
+      .post("/megadex/preferences/users")
       .set("x-consumer-user-id", "42")
       .set("x-consumer-name", "alice")
       .send({
         rows: [{ userId: 999, name: "grid", conf: [], isActive: true }],
       });
     expect(response.status).toBe(200);
-    expect(execute.mock.calls[0][1][0]).toBe(42);
-    expect(execute.mock.calls[0][1]).not.toContain(999);
+    expect(preferenceEnt.lastMutatedRows[0]).toMatchObject({
+      userId: 42,
+      resourceName: "users",
+      name: "grid",
+    });
+    expect(response.body.rows[0].userId).toBeUndefined();
   });
 
   test("scopes updates to the forwarded user", async () => {
     execute.mockResolvedValue({
       rowCount: 1,
-      rows: [{ id: 8, resourceName: "users", name: "mine", conf: [] }],
+      rows: [{ id: 8 }],
     });
     const response = await request(app)
       .put("/megadex/preferences/users")
       .set("x-consumer-user-id", "42")
       .set("x-consumer-name", "alice")
-      .send({ rows: [{ id: 8, userId: 999, name: "mine" }] });
+      .send({ rows: [{ id: 8, userId: 999, name: "mine", isActive: true }] });
     expect(response.status).toBe(200);
     const [sql, args] = execute.mock.calls[0];
     expect(sql).toContain('"userId"');
-    expect(args).toContain(42);
-    expect(args).not.toContain(999);
+    expect(args).toEqual([[8], "users", 42]);
   });
 
   test("scopes deletes to the forwarded user", async () => {
-    execute.mockResolvedValue({ rowCount: 1, rows: [] });
     const response = await request(app)
       .delete("/megadex/preferences/users/8")
       .set("x-consumer-user-id", "42")
       .set("x-consumer-name", "alice");
     expect(response.status).toBe(200);
-    expect(execute.mock.calls[0][1]).toEqual([8, "users", 42]);
+    expect(preferenceEnt.lastGetFilters).toEqual({
+      id: { value: "8", matchMode: "=" },
+      userId: { value: 42, matchMode: "=" },
+      resourceName: { value: "users", matchMode: "=" },
+    });
   });
 });

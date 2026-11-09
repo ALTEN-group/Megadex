@@ -1,4 +1,4 @@
-ARG POSTGRES_VERSION=postgres:17-alpine
+ARG POSTGRES_VERSION=postgres:16.2-alpine3.19
 FROM ${POSTGRES_VERSION}
 
 LABEL org.opencontainers.image.description="Megadex local PostgreSQL database (development)"

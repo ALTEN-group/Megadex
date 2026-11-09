@@ -4,7 +4,7 @@ export const environment: Environment = {
   production: false,
   megadexApi: "/api/megadex/",
   gatelinApi: "/api/gatelin/",
-  apiUsers: "/api/users/",
+  apiUsers: "/api/megadex/",
   assets: "assets",
   msNotifEnabled: true,
 };

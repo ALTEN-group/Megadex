@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 40">
+  <g transform="translate(2, 2)">
+    <rect width="36" height="36" rx="8" fill="#18202c"/>
+    <circle cx="18" cy="14" r="6" fill="#e06a2b"/>
+    <path d="M8 30c0-5.5 4.5-10 10-10s10 4.5 10 10" fill="#e06a2b"/>
+  </g>
+  <text x="48" y="27" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="22" letter-spacing="1" fill="currentColor">MEGADEX</text>
+</svg>

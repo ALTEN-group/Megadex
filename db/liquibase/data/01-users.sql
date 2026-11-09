@@ -1,9 +1,14 @@
 
 
--- Dev/demo users, inserted through the users view
-INSERT INTO users ("gender", "civility", "firstName", "lastName", "nickname", "email", "address", "zipCode", "city", "country", "phone", "portrait", "active", "language", "rolesArrayAgg", "creatorId", "creatorName") VALUES
-('M', 'Mr.', 'Ludovic', 'Cluber',  'Cluber-Smith', 'ludoclub@hotmail.com', '12 rue des admins', '31000', 'Toulouse', 'FRA', '0623593478', 'portrait_1689873840731.jpeg', TRUE, 'en', ARRAY[1], -1, 'system'),
-('F', 'Mrs.', 'Estelle', 'Picq',   'ElPicqo',     'est.picq@gmail.com',  '12 rue des users', '31000', 'Toulouse', 'FRA', '0658965342', 'portrait_1689883054959.jpeg', TRUE, 'fr', ARRAY[1], -1, 'system')
+-- Dev/demo users, inserted through the users view (ids 1..7)
+INSERT INTO users ("gender", "civility", "firstName", "middleName", "lastName", "nickname", "email", "address", "zipCode", "city", "country", "phone", "portrait", "active", "language", "rolesArrayAgg", "creatorId", "creatorName") VALUES
+('M', 'Mr.', 'Admin',     NULL,       'User',    'Admin',        'admin@example.com',        '123 Admin Street',    '75001', 'Paris', 'FRA', '+33123456789', NULL, TRUE, 'en', ARRAY[2], -1, 'system'),
+('F', 'Ms.', 'Standard',  NULL,       'User',    'StandardUser', 'standard@example.com',     '456 Standard Avenue', '75002', 'Paris', 'FRA', '+33987654321', NULL, TRUE, 'en', ARRAY[3], -1, 'system'),
+('M', 'Mr.', 'Coco',      'Cocouser', 'Lastico', 'CLastico',     'coco@example.com',         '789 Club Boulevard',  '75003', 'Paris', 'FRA', '+33112233445', NULL, TRUE, 'en', ARRAY[1], -1, 'system'),
+('M', 'Mr.', 'Guest',     NULL,       'User',    'GuestUser',    'guest@example.com',        '1 Guest Lane',        '75004', 'Paris', 'FRA', '+33600000004', NULL, TRUE, 'en', ARRAY[4], -1, 'system'),
+('F', 'Ms.', 'eBoutique', NULL,       'User',    'EbUser',       'ebuser@example.com',       '2 Shop Street',       '75005', 'Paris', 'FRA', '+33600000005', NULL, TRUE, 'en', ARRAY[5], -1, 'system'),
+('M', 'Mr.', 'eBoutique', NULL,       'Super',   'EbSuperAdmin', 'ebsuperadmin@example.com', '3 Shop Street',       '75006', 'Paris', 'FRA', '+33600000006', NULL, TRUE, 'en', ARRAY[1], -1, 'system'),
+('F', 'Ms.', 'eBoutique', NULL,       'Admin',   'EbAdmin',      'ebadmin@example.com',      '4 Shop Street',       '75007', 'Paris', 'FRA', '+33600000007', NULL, TRUE, 'en', ARRAY[2], -1, 'system')
 ;
 
 

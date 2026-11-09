@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, signal } from "@angular/core";
+import { effect, Injectable, inject, signal } from "@angular/core";
 import { APP_CONFIG } from "@core/app-config/app-config.token";
 
 export type AppTheme = "dark" | "light";

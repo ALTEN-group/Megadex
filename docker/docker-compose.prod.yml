@@ -7,6 +7,12 @@ x-megadex-healthcheck: &megadexHealthcheck
   timeout: 5s
   retries: 5
 
+x-gatelin-healthcheck: &gatelinHealthcheck
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/gatelin/health/ready"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+
 services:
 
   postgres:
@@ -25,6 +31,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_ROOT_PWD}
       LIQUIBASE_USER: ${LIQUIBASE_DB_USER}
       LIQUIBASE_PWD: ${LIQUIBASE_DB_PWD}
+      GATELIN_USER: ${GATELIN_DB_USER}
+      GATELIN_PWD: ${GATELIN_DB_PWD}
       MEGADEX_USER: ${MEGADEX_DB_USER}
       MEGADEX_PWD: ${MEGADEX_DB_PWD}
     networks:
@@ -65,13 +73,88 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
+  gatelin_migration:
+    image: ghcr.io/alten-group/gatelin-migration:${GATELIN_VERSION:-0.1.0-alpha.11}
+    container_name: ${GATELIN_MIGRATION_HOST}
+    hostname: ${GATELIN_MIGRATION_HOST}
+    environment:
+      TZ: ${TZ}
+      LIQUIBASE_COMMAND_USERNAME: ${LIQUIBASE_DB_USER}
+      LIQUIBASE_COMMAND_PASSWORD: ${LIQUIBASE_DB_PWD}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${GATELIN_DB_NAME}
+      DB_USER: ${GATELIN_DB_USER}
+      DB_PWD: ${GATELIN_DB_PWD}
+      DB_JOB_USER: ${GATELIN_DB_JOB_USER}
+      DB_JOB_PWD: ${GATELIN_DB_JOB_PWD}
+      UPDATE: ${LIQUIBASE_UPDATE}
+      ROLLBACK: ${LIQUIBASE_ROLLBACK}
+      SNAPSHOT: snapshot/snapshot${LIQUIBASE_SNAPSHOT}
+      LIQUIBASE_LOG_LEVEL: ${LIQUIBASE_LOG_LEVEL}
+      LIQUIBASE_COMMAND_CONTEXTS: ${LIQUIBASE_COMMAND_CONTEXTS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    volumes:
+      # Megadex route/service seed applied after Gatelin core schema
+      - ${PWD}/db/liquibase/gatelin-data/:/liquibase/data
+
+  gatelin:
+    image: ghcr.io/alten-group/gatelin:${GATELIN_VERSION:-0.1.0-alpha.11}
+    container_name: ${GATELIN_HOST}
+    hostname: ${GATELIN_HOST}
+    environment:
+      PORT: ${DEFAULT_PORT}
+      TZ: ${TZ}
+      PWD_CHECK_URL: ${GATELIN_PWD_CHECK_URL}
+      PWD_CHALLENGES_URL: ${GATELIN_PWD_CHALLENGES_URL}
+      PWD_TRUSTED_DEVICES_URL: ${GATELIN_PWD_TRUSTED_DEVICES_URL}
+      PWD_LOGIN_TICKET_URL: ${GATELIN_PWD_LOGIN_TICKET_URL}
+      USER_SEARCH_URL: ${MEGADEX_USER_SEARCH_URL}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_NAME: ${GATELIN_DB_NAME}
+      DB_USER: ${GATELIN_DB_USER}
+      DB_PWD: ${GATELIN_DB_PWD}
+      DB_JOB_USER: ${GATELIN_DB_JOB_USER}
+      DB_JOB_PWD: ${GATELIN_DB_JOB_PWD}
+      TOKEN_SECRET: ${GATELIN_TOKEN_SECRET}
+      APP_NAME: ${APP_NAME}
+      ENV_NAME: ${ENV_NAME}
+      SERVER_SCHEME: ${SERVER_SCHEME}
+      SERVICE_NAME: ${GATELIN_HOST}
+      ACCESS_TOKEN_DURATION: ${GATELIN_ACCESS_TOKEN_DURATION}
+      REFRESH_TOKEN_DURATION: ${GATELIN_REFRESH_TOKEN_DURATION}
+      REFRESH_TOKEN_COOKIE: ${GATELIN_REFRESH_TOKEN_COOKIE}
+      REFRESH_TOKEN_COOKIE_HTTPS_ONLY: ${GATELIN_REFRESH_TOKEN_COOKIE_HTTPS_ONLY:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gatelin_migration:
+        condition: service_completed_successfully
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "stack.name=${STACK_NAME}"
+      - "traefik.http.routers.gatelin.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.gatelin.entrypoints=web"
+      - "traefik.http.routers.gatelin.service=gatelin"
+      - "traefik.http.routers.gatelin.middlewares=strip-prefix"
+      - "traefik.http.middlewares.strip-prefix.stripprefix.prefixes=/api"
+      - "traefik.http.middlewares.strip-prefix.stripprefix.forceSlash=false"
+      - "traefik.http.services.gatelin.loadBalancer.server.port=${DEFAULT_PORT}"
+    healthcheck: *gatelinHealthcheck
+
   megadex_migration:
     build:
       context: ${PWD}/db/liquibase
       dockerfile: dockerfile.prod
       args:
         LIQUIBASE_VERSION: ${LIQUIBASE_VERSION}
-    image: ghcr.io/dwtechs/megadex-migration:${VERSION:-latest}
+    image: ghcr.io/alten-group/megadex-migration:${VERSION:-latest}
     container_name: ${MEGADEX_MIGRATION_HOST}
     hostname: ${MEGADEX_MIGRATION_HOST}
     environment:
@@ -97,7 +180,7 @@ services:
       - internal
 
   megadex:
-    image: ghcr.io/dwtechs/megadex:${VERSION:-latest}
+    image: ghcr.io/alten-group/megadex:${VERSION:-latest}
     container_name: ${MEGADEX_HOST}
     hostname: ${MEGADEX_HOST}
     environment:
@@ -113,10 +196,13 @@ services:
       ENV_NAME: ${ENV_NAME}
       SERVER_SCHEME: ${SERVER_SCHEME}
       SERVICE_NAME: ${MEGADEX_HOST}
+      PWD_CREATE_URL: ${MEGADEX_PWD_CREATE_URL:-}
+      CONSUMER_URL: ${MEGADEX_CONSUMER_URL:-}
       # Bundled admin UI, served on a dedicated internal port.
       ADMIN_PORT: ${ADMIN_PORT}
       ADMIN_BASE_PATH: ${ADMIN_BASE_PATH:-/megadex}
       ADMIN_SSO_TOKEN_KEY: ${ADMIN_SSO_TOKEN_KEY:-}
+      ADMIN_ROLES_SEARCH_URL: ${ADMIN_ROLES_SEARCH_URL:-/api/gatelin/roles/search}
     depends_on:
       postgres:
         condition: service_healthy

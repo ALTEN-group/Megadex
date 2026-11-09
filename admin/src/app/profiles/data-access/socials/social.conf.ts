@@ -8,10 +8,16 @@ import {
   INPUT_TYPES,
   maxlength,
   minlength,
+  patternValidator,
   required,
   StrictCrudItemOptions,
 } from "@dwtechs/ngx-crud-builder";
 import { Social } from "app/profiles/data-access/socials/social.model";
+
+const httpUrlValidator = patternValidator({
+  pattern: /^https?:\/\/.+/,
+  message: "URL must start with http:// or https://",
+});
 
 export const SOCIAL_COLUMNS: (
   acls: Acls | undefined,
@@ -37,7 +43,7 @@ export const SOCIAL_COLUMNS: (
           defaultWidth: "300px",
         },
         controlOptions: {
-          validators: [maxlength(255)],
+          validators: [maxlength(255), httpUrlValidator],
         },
       },
       ...buildArchivedConfig(),

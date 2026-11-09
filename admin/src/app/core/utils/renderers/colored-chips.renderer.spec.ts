@@ -1,5 +1,8 @@
 import { DomSanitizer } from "@angular/platform-browser";
-import { ColoredChipItem, buildColoredChipsCellRenderer } from "./colored-chips.renderer";
+import {
+  buildColoredChipsCellRenderer,
+  ColoredChipItem,
+} from "./colored-chips.renderer";
 
 const FALLBACK_COLOR = "#6B7280";
 const CHIP_PREFIX =

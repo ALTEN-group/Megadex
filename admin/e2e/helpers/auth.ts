@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { getAdminCredentials, type E2eCredentials } from "./credentials";
+import { type E2eCredentials, getAdminCredentials } from "./credentials";
 
 export async function loginAs(
   page: Page,
@@ -34,9 +34,9 @@ export async function logout(page: Page): Promise<void> {
 }
 
 const ENTITY_LINKS: Record<string, { label: RegExp; parent?: RegExp }> = {
-  home: { label: /Accueil/ },
   users: { label: /Users/ },
   socials: { label: /Social networks/ },
+  auditLogs: { label: /Audit log/ },
 };
 
 /**
@@ -53,7 +53,7 @@ export async function openEntity(page: Page, path: string): Promise<void> {
     throw new Error(`Unknown entity path: ${path}`);
   }
 
-  // Already on the target route (e.g. post-login lands on /home).
+  // Already on the target route (e.g. post-login lands on /users).
   if (new RegExp(`/${path}(?:\\?|$|/)`).test(page.url())) {
     return;
   }

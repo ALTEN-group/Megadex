@@ -1,13 +1,7 @@
-import { AppPaths } from "app/app.routes";
 import { MenuItem } from "@openng/optimus-ui/api";
+import { AppPaths } from "app/app.routes";
 
 export const SIDENAV: MenuItem[] = [
-  {
-    id: "home",
-    label: $localize`:@@Home_homeNav:Accueil`,
-    routerLink: `/${AppPaths.HOME}`,
-    icon: "pi pi-home",
-  },
   {
     id: "users",
     label: $localize`:@@Admin_UsersNav:Users`,
@@ -24,6 +18,15 @@ export const SIDENAV: MenuItem[] = [
     icon: "pi pi-share-alt",
     data: {
       functionality: "socials",
+    },
+  },
+  {
+    id: "auditLogs",
+    label: $localize`:@@Admin_AuditLogsNav:Audit log`,
+    routerLink: `/${AppPaths.AUDITLOGS}`,
+    icon: "pi pi-history",
+    data: {
+      functionality: "auditLogs",
     },
   },
 ];

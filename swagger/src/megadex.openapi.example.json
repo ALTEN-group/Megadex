@@ -31,6 +31,10 @@
     {
       "name": "Lookup",
       "description": "Translated reference data (read-only)."
+    },
+    {
+      "name": "Audit",
+      "description": "Megadex audit log (`/megadex/audit`)."
     }
   ],
   "security": [
@@ -552,7 +556,7 @@
       },
       "historyEntry": {
         "type": "object",
-        "description": "Grouped `log.history` rows for one action (see src/middlewares/history.js).",
+        "description": "Grouped `log.history` rows for one action (via `SQLEntity.history()`).",
         "properties": {
           "id": {
             "type": "integer"
@@ -569,17 +573,63 @@
               "DELETE"
             ]
           },
-          "consumerId": {
+          "userId": {
             "type": "integer",
             "nullable": true
           },
-          "consumerName": {
+          "userName": {
             "type": "string",
             "nullable": true
           },
           "record": {
             "type": "object",
             "description": "JSON snapshot of the affected row"
+          }
+        }
+      },
+      "auditEntry": {
+        "type": "object",
+        "description": "One row of `log.audit` with raw snapshots converted into a human-readable `changes` summary.",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "tstamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tableName": {
+            "type": "string"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "INSERT",
+              "UPDATE",
+              "DELETE"
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "recordId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "changes": {
+            "type": "string",
+            "description": "Formatted field diffs (with secret/private fields redacted)"
           }
         }
       },
@@ -640,6 +690,9 @@
             ]
           },
           "isFilterable": {
+            "type": "boolean"
+          },
+          "readOnly": {
             "type": "boolean"
           }
         }
@@ -792,18 +845,53 @@
                 "$ref": "#/components/schemas/sessionRequest"
               },
               "examples": {
-                "user2": {
-                  "summary": "Dev user (userId 2)",
+                "admin": {
+                  "summary": "Admin (userId 1)",
+                  "value": {
+                    "email": "__EMAIL_1__",
+                    "pwd": "__PWD_1__"
+                  }
+                },
+                "standard": {
+                  "summary": "Standard (userId 2)",
                   "value": {
                     "email": "__EMAIL_2__",
                     "pwd": "__PWD_2__"
                   }
                 },
-                "user3": {
-                  "summary": "Dev user (userId 3)",
+                "coco": {
+                  "summary": "Super admin (userId 3)",
                   "value": {
                     "email": "__EMAIL_3__",
                     "pwd": "__PWD_3__"
+                  }
+                },
+                "guest": {
+                  "summary": "Guest (userId 4)",
+                  "value": {
+                    "email": "__EMAIL_4__",
+                    "pwd": "__PWD_4__"
+                  }
+                },
+                "ebuser": {
+                  "summary": "eBoutique user (userId 5)",
+                  "value": {
+                    "email": "__EMAIL_5__",
+                    "pwd": "__PWD_5__"
+                  }
+                },
+                "ebsuperadmin": {
+                  "summary": "eBoutique super admin (userId 6)",
+                  "value": {
+                    "email": "__EMAIL_6__",
+                    "pwd": "__PWD_6__"
+                  }
+                },
+                "ebadmin": {
+                  "summary": "eBoutique admin (userId 7)",
+                  "value": {
+                    "email": "__EMAIL_7__",
+                    "pwd": "__PWD_7__"
                   }
                 }
               }
@@ -833,7 +921,7 @@
         }
       }
     },
-    "/users/users/me": {
+    "/megadex/users/me": {
       "get": {
         "tags": [
           "User"
@@ -855,6 +943,64 @@
           },
           "404": {
             "$ref": "#/components/responses/notFoundError"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Update authenticated user's own profile",
+        "description": "Self-service profile update for the authenticated consumer (`x-consumer-user-id`). Allows updating profile fields (`firstName`, `lastName`, `nickname`, `backupEmail`, `language`, `portrait`, `socialsJsonAgg`, etc.) while rejecting privilege-escalation fields (`roles`, `active`, `archived`, `email`) with `403`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/user"
+              },
+              "example": {
+                "firstName": "Ada",
+                "lastName": "Lovelace",
+                "nickname": "ada",
+                "language": "fr"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/user"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/unauthorizedError"
           },
           "5XX": {
             "$ref": "#/components/responses/unexpectedError"
@@ -922,6 +1068,7 @@
           "User"
         ],
         "summary": "Add users",
+        "description": "Creates user profile(s) in Megadex. When `PWD_CREATE_URL` is configured, also provisions each created user's password record in Foxnox (`POST /foxnox/pwd`) so the user can complete onboarding via Foxnox's password recovery flow (`/api/foxnox/web/recover`).",
         "requestBody": {
           "required": true,
           "content": {
@@ -1963,6 +2110,63 @@
                 }
               }
             }
+          },
+          "5XX": {
+            "$ref": "#/components/responses/unexpectedError"
+          }
+        }
+      }
+    },
+    "/megadex/audit/search": {
+      "post": {
+        "tags": [
+          "Audit"
+        ],
+        "summary": "Search audit log entries",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/searchRequest"
+              },
+              "example": {
+                "pagination": true,
+                "first": 0,
+                "limit": 10,
+                "sortField": "tstamp",
+                "sortOrder": "DESC"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Matching audit log entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/auditEntry"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/badRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorizedError"
           },
           "5XX": {
             "$ref": "#/components/responses/unexpectedError"

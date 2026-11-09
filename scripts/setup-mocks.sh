@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Seeds passwords for the Megadex dev users (db/liquibase/data) by calling Foxnox's own
-# POST /foxnox/ endpoint (which uses @dwtechs/passken-express `create` to generate +
+# POST /foxnox/pwd endpoint (which uses @dwtechs/passken-express `create` to generate +
 # hash server-side), then substitutes the returned credentials into
 # swagger/src/megadex.openapi.json and stores the first user's credentials as
 # E2E_EMAIL / E2E_PASSWORD in docker/conf/.env.dev (both gitignored).
@@ -25,8 +25,8 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 ENV_FILE="docker/conf/.env.dev"
-# Named dev users from db/liquibase/data/01-users.sql (ids start at 2).
-MOCK_USER_IDS=(2 3)
+# Named dev users from db/liquibase/data/01-users.sql (ids 1..7).
+MOCK_USER_IDS=(1 2 3 4 5 6 7)
 SWAGGER_EXAMPLE="swagger/src/megadex.openapi.example.json"
 SWAGGER_FILE="swagger/src/megadex.openapi.json"
 
@@ -51,8 +51,13 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 # Load container names + postgres credentials from .env.dev.
-source "$(dirname "${BASH_SOURCE[0]}")/lib/load-env.sh"
-load_env_file "$ENV_FILE"
+ENV_TMP=$(mktemp)
+grep -v '^#' "$ENV_FILE" | grep -v '^UID=' > "$ENV_TMP"
+set -a
+# shellcheck disable=SC1090
+source "$ENV_TMP"
+set +a
+rm -f "$ENV_TMP"
 
 : "${FOXNOX_HOST:?FOXNOX_HOST missing from $ENV_FILE}"
 : "${POSTGRES_HOST:?POSTGRES_HOST missing from $ENV_FILE}"
@@ -110,7 +115,7 @@ docker exec -e PGPASSWORD="$POSTGRES_ROOT_PWD" "$POSTGRES_HOST" \
 #    Runs the HTTP call from inside the foxnox container so we don't have to expose
 #    /foxnox/ externally (it lives on the internal network behind the BFF).
 BODY_JSON="{\"rows\":[$(printf '{"userId":%s},' "${MOCK_USER_IDS[@]}" | sed 's/,$//')]}"
-echo -e "${YELLOW}🔐 Generating passwords via POST /foxnox/ ...${NC}"
+echo -e "${YELLOW}🔐 Generating passwords via POST /foxnox/pwd ...${NC}"
 RESPONSE=$(docker exec -i "$FOXNOX_HOST" node -e '
   let body = "";
   process.stdin.on("data", (c) => body += c);
@@ -119,7 +124,7 @@ RESPONSE=$(docker exec -i "$FOXNOX_HOST" node -e '
     const req = http.request({
       host: "localhost",
       port: process.env.PORT || 3000,
-      path: "/foxnox/",
+      path: "/foxnox/pwd",
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -134,7 +139,7 @@ RESPONSE=$(docker exec -i "$FOXNOX_HOST" node -e '
       res.on("data", (c) => out += c);
       res.on("end", () => {
         if (res.statusCode >= 400) {
-          process.stderr.write(`POST /foxnox/ failed (${res.statusCode}): ${out}\n`);
+          process.stderr.write(`POST /foxnox/pwd failed (${res.statusCode}): ${out}\n`);
           process.exit(1);
         }
         process.stdout.write(out);
@@ -177,8 +182,11 @@ done <<< "$PAIRS"
 # 7. Restart swagger so `require("./megadex.openapi.json")` re-reads the file.
 echo ""
 echo -e "${YELLOW}🔁 Reloading swagger container...${NC}"
-docker compose -f docker/docker-compose.yml --env-file "$ENV_FILE" restart swagger >/dev/null
-echo -e "${GREEN}✓${NC} Swagger: ${SERVER_SCHEME:-http://}${SERVER_URL:-localhost}:${TRAEFIK_PORT:-8100}/swagger"
+if docker compose -f docker/docker-compose.yml --env-file "$ENV_FILE" restart swagger >/dev/null 2>&1; then
+  echo -e "${GREEN}✓${NC} Swagger: ${SERVER_SCHEME:-http://}${SERVER_URL:-localhost}:${TRAEFIK_PORT:-8100}/swagger"
+else
+  echo -e "${GREEN}✓${NC} Swagger container was not running — ${SWAGGER_FILE} is updated on disk."
+fi
 
 echo ""
 echo -e "${GREEN}✅ Done. Log in at ${SERVER_SCHEME:-http://}${SERVER_URL:-localhost}:${TRAEFIK_PORT:-8100}/megadex/ (credentials above; first one saved as E2E_EMAIL / E2E_PASSWORD in ${ENV_FILE}).${NC}"

@@ -1,0 +1,16 @@
+{
+  "name": "megadex-docs",
+  "version": "0.1.0-alpha.1",
+  "description": "Megadex Documentation",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev docs --host",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs"
+  },
+  "dependencies": {
+    "mermaid": "11.16.0",
+    "vitepress": "1.6.4",
+    "vitepress-plugin-mermaid": "2.0.17"
+  }
+}

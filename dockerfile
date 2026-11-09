@@ -1,6 +1,8 @@
 ARG NODE_VERSION
 FROM node:${NODE_VERSION}
 
+LABEL org.opencontainers.image.description="Megadex user profile service (development)"
+
 ARG NODE_ENV
 ENV NODE_ENV=${NODE_ENV}
 

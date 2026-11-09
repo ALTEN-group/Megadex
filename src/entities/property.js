@@ -1,7 +1,28 @@
 // @ts-check
 
-// JSON carries dates as ISO strings, while antity's "date" check requires Date objects.
-const toDate = (v) => (typeof v === "string" ? new Date(v) : v);
+// JSON carries dates as ISO strings (or boolean `true` for consent timestamps),
+// while antity's "date" check requires Date objects.
+const toDate = (v) => {
+  if (v === true) return new Date();
+  if (typeof v === "string") return new Date(v);
+  return v;
+};
+
+/**
+ * Validates that a string is either empty or a valid HTTP(S) URL within max length.
+ *
+ * @param {number} [maxLen=255]
+ * @returns {(v: unknown) => boolean}
+ */
+export function httpUrlValidator(maxLen = 255) {
+  return (v) => {
+    if (typeof v !== "string" || v.length > maxLen) return false;
+    if (v === "") return true;
+    if (!URL.canParse(v)) return false;
+    const { protocol } = new URL(v);
+    return protocol === "http:" || protocol === "https:";
+  };
+}
 
 export function property(
   key,
@@ -12,8 +33,12 @@ export function property(
     filterable = true,
     privateField = false,
     typeChecked = true,
+    readOnly = false,
     min = null,
     max = null,
+    sanitizer = null,
+    normalizer = null,
+    validator = null,
   } = {},
 ) {
   return {
@@ -26,9 +51,15 @@ export function property(
     requiredFor,
     operations,
     isPrivate: privateField,
-    sanitizer: null,
+    readOnly: Boolean(readOnly),
+    sanitizer,
     normalizer:
-      type === "object" ? JSON.stringify : type === "date" ? toDate : null,
-    validator: null,
+      normalizer ??
+      (type === "object" || type === "json"
+        ? JSON.stringify
+        : type === "date"
+          ? toDate
+          : null),
+    validator,
   };
 }

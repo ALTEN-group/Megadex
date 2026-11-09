@@ -57,4 +57,19 @@ erDiagram
     int updaterId
     string updaterName
   }
+
+  audit["log.audit VIEW"] {
+    int id
+    timestamp tstamp
+    string tableName
+    string operation
+    string action
+    int userId
+    string userName
+    int recordId
+    string[] changedKeys
+    string kind
+    jsonb record
+    jsonb previous
+  }
 ```

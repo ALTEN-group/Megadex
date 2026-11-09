@@ -1,8 +1,8 @@
+import { provideHttpClient } from "@angular/common/http";
 import {
   HttpTestingController,
   provideHttpClientTesting,
 } from "@angular/common/http/testing";
-import { provideHttpClient } from "@angular/common/http";
 import { TestBed } from "@angular/core/testing";
 import { ActivatedRoute, Router } from "@angular/router";
 import { AclService } from "@core/acl/acl.service";
@@ -35,7 +35,7 @@ describe("AuthenticationService", () => {
       storeAccessLevels: vi.fn(),
       resetAccessLevels: vi.fn(),
     };
-    router = { navigate: vi.fn(), url: "/home" };
+    router = { navigate: vi.fn(), url: "/users" };
     queryParams = { returnUrl: null };
 
     TestBed.configureTestingModule({
@@ -60,7 +60,7 @@ describe("AuthenticationService", () => {
           provide: APP_CONFIG,
           useValue: {
             gatelinApi: "/api/",
-            apiUsers: "/api/users/",
+            apiUsers: "/api/megadex/",
             storageKeys: {},
             sidenavItems: [],
             title: "Admin",
@@ -100,7 +100,7 @@ describe("AuthenticationService", () => {
       permissions: [{ route: 82, operations: [], fields: [] }],
     });
 
-    const me = http.expectOne("/api/users/users/me");
+    const me = http.expectOne("/api/megadex/users/me");
     me.flush({ firstName: "Ada", lastName: "Lovelace", nickname: "ada" });
 
     expect(result).toBe(true);
@@ -155,7 +155,7 @@ describe("AuthenticationService", () => {
     });
 
     http
-      .expectOne("/api/users/users/me")
+      .expectOne("/api/megadex/users/me")
       .flush({ firstName: "Ada", lastName: "Lovelace", nickname: "ada" });
 
     expect(result).toBe(true);
@@ -210,7 +210,7 @@ describe("AuthenticationService", () => {
     expect(tokenService.deleteAccessToken).toHaveBeenCalled();
     expect(aclService.resetAccessLevels).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(["/login"], {
-      queryParams: { returnUrl: "/home" },
+      queryParams: { returnUrl: "/users" },
     });
   });
 

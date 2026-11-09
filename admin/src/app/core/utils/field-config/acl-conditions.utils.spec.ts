@@ -7,8 +7,9 @@ function column(key: string, overrides: Record<string, unknown> = {}) {
 }
 
 function getDisabled(col: unknown) {
-  const conditions = (col as { conditions?: { controlOptions?: { disabled?: unknown } } })
-    .conditions;
+  const conditions = (
+    col as { conditions?: { controlOptions?: { disabled?: unknown } } }
+  ).conditions;
   return conditions?.controlOptions?.disabled as
     | ((args: { model: { id: unknown }; control?: FormControl }) => boolean)
     | undefined;

@@ -91,8 +91,8 @@ REVOKE DELETE ON TABLE
 FROM ${DB_USER};
 REVOKE DELETE ON TABLE log.history FROM ${DB_USER};
 
-REVOKE EXECUTE ON FUNCTION delete(TEXT, TEXT, TIMESTAMP) FROM PUBLIC, ${DB_USER};
-GRANT EXECUTE ON FUNCTION delete(TEXT, TEXT, TIMESTAMP) TO ${DB_JOB_USER};
+REVOKE EXECUTE ON FUNCTION delete(TEXT, TEXT, TIMESTAMPTZ) FROM PUBLIC, ${DB_USER};
+GRANT EXECUTE ON FUNCTION delete(TEXT, TEXT, TIMESTAMPTZ) TO ${DB_JOB_USER};
 EOF
   return $?
 }
@@ -106,16 +106,18 @@ if [[ "$1" != "history" ]] && type "$1" > /dev/null 2>&1; then
   ## First argument is an actual OS command (except if the command is history as it is a liquibase command). Run it
   exec "$@"
 else
+  # Each step is guarded: a failed `update` used to fall through to create_user and
+  # exit 0, leaving a half-migrated schema that only surfaced at runtime.
   if [[ $UPDATE = 1 ]]; then
-      create_db
-      update
-      update_data
-      snapshot
-      create_user
+      create_db || exit $?
+      update || exit $?
+      update_data || exit $?
+      snapshot || exit $?
+      create_user || exit $?
   elif [[ $ROLLBACK -gt 1 ]]; then
-      rollback
-      snapshot
+      rollback || exit $?
+      snapshot || exit $?
   else 
-      diff
+      diff || exit $?
   fi
 fi

@@ -1,6 +1,6 @@
 import { InjectionToken } from "@angular/core";
-import { Environment } from "../../../environments/environment.model";
 import { MenuItem } from "@openng/optimus-ui/api";
+import { Environment } from "../../../environments/environment.model";
 
 export interface AppConfig {
   title: string;
@@ -22,7 +22,7 @@ const defaultValue: AppConfig = {
   sidenavItems: [],
   megadexApi: "/api/megadex/",
   gatelinApi: "/api/gatelin/",
-  apiUsers: "/api/users/",
+  apiUsers: "/api/megadex/",
   webBase: "/api/foxnox/web",
   env: {},
 };

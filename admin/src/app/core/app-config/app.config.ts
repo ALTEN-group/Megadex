@@ -5,24 +5,27 @@ import {
   provideAppInitializer,
 } from "@angular/core";
 import { TitleStrategy } from "@angular/router";
-import { APP_CONFIG, AppConfig } from "@core/app-config/app-config.token";
 import { SIDENAV } from "@core/app-config/app.sidenav";
+import { APP_CONFIG, AppConfig } from "@core/app-config/app-config.token";
 import { CRUD_LABELS_CONFIG } from "@core/app-config/crud-labels";
 import { CustomTitleStrategyService } from "@core/app-config/custom-title-strategy.service";
 import { PrimeNgTranslations } from "@core/app-config/primeng-translations";
-import { AuthenticationService } from "@core/auth/auth.service";
+import {
+  AuthenticationService,
+  readLoginTicket,
+} from "@core/auth/auth.service";
 import {
   APP_FORM_CONFIG,
   APP_CONFIG as CRUD_APP_CONFIG,
   FormTokenData,
-  HistorizedData,
   HISTORY_MAPPER,
+  HistorizedData,
   provideCrudLabels,
   provideCrudRenderer,
   provideFormFieldRenderer,
 } from "@dwtechs/ngx-crud-builder";
+import { filter, of, tap } from "rxjs";
 import { environment } from "../../../environments/environment";
-import { filter, tap } from "rxjs";
 import { readAdminRuntimeConfig } from "./runtime-config";
 
 /**
@@ -93,9 +96,8 @@ export function provideAppConfig() {
             id: r.id,
             tstamp: r.tstamp,
             operation: r.operation,
-            // Megadex history rows carry the acting consumer (src/middlewares/history.js)
-            updaterId: r.consumerId,
-            updaterName: r.consumerName,
+            updaterId: r.userId,
+            updaterName: r.userName,
             record,
           };
         };
@@ -105,6 +107,8 @@ export function provideAppConfig() {
 }
 
 function checkToken(authService: AuthenticationService) {
+  if (readLoginTicket()) return of(null);
+
   return authService.refreshToken().pipe(
     tap((success) => {
       if (!success) {

@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from "@angular/core";
+import { Injectable, inject, signal } from "@angular/core";
 import { AclsMapping } from "@core/acl/acls.model";
 import { ENTITY_ROUTE_MAPPING } from "@core/app-config/app.acls";
 import { AdminEntity } from "@core/app-config/app.entities";

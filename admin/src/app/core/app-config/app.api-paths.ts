@@ -9,4 +9,5 @@ import { AdminEntity } from "@core/app-config/app.entities";
 export const ENTITY_API_PATHS: Record<AdminEntity, string> = {
   users: "users",
   socials: "socials",
+  auditLogs: "audit",
 };

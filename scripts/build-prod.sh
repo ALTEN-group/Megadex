@@ -58,7 +58,7 @@ echo -e "${BLUE}🔖 Version: ${VERSION}${NC}"
 
 # ─── API ────────────────────────────────────────────────────────────────────
 if [[ "$BUILD_API" == true ]]; then
-  IMAGE="ghcr.io/dwtechs/megadex:${VERSION}"
+  IMAGE="ghcr.io/alten-group/megadex:${VERSION}"
   echo -e "${YELLOW}🏗️  Building api image ${IMAGE}...${NC}"
   docker build \
     --file dockerfile.prod \
@@ -68,20 +68,20 @@ if [[ "$BUILD_API" == true ]]; then
     --build-arg UID="${APP_UID}" \
     --build-arg GID="${APP_GID}" \
     --tag "${IMAGE}" \
-    --tag "ghcr.io/dwtechs/megadex:latest" \
+    --tag "ghcr.io/alten-group/megadex:latest" \
     .
   echo -e "${GREEN}✅ API image built: ${IMAGE}${NC}"
 fi
 
 # ─── Migration ──────────────────────────────────────────────────────────────
 if [[ "$BUILD_MIGRATION" == true ]]; then
-  IMAGE="ghcr.io/dwtechs/megadex-migration:${VERSION}"
+  IMAGE="ghcr.io/alten-group/megadex-migration:${VERSION}"
   echo -e "${YELLOW}🏗️  Building migration image ${IMAGE}...${NC}"
   docker build \
     --file db/liquibase/dockerfile.prod \
     --build-arg LIQUIBASE_VERSION="${LIQUIBASE_VERSION}" \
     --tag "${IMAGE}" \
-    --tag "ghcr.io/dwtechs/megadex-migration:latest" \
+    --tag "ghcr.io/alten-group/megadex-migration:latest" \
     db/liquibase
   echo -e "${GREEN}✅ Migration image built: ${IMAGE}${NC}"
 fi

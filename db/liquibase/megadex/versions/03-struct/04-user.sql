@@ -1,5 +1,4 @@
--- Reserve user id 1 for the system identity.
-CREATE SEQUENCE IF NOT EXISTS user_id_seq START WITH 2 INCREMENT BY 1;
+CREATE SEQUENCE IF NOT EXISTS user_id_seq START WITH 1 INCREMENT BY 1;
 
 CREATE TABLE IF NOT EXISTS "user" (
   id INTEGER PRIMARY KEY DEFAULT nextval('user_id_seq'),

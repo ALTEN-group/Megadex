@@ -70,14 +70,11 @@ CREATE OR REPLACE FUNCTION iud_user() RETURNS trigger AS $$
         "gdprConsentedAt"      = NEW."gdprConsentedAt",
         "marketingConsentedAt" = NEW."marketingConsentedAt",
         active                 = COALESCE(NEW.active, active),
+        archived               = COALESCE(NEW.archived, archived),
         "updatedAt"            = NOW(),
         "updaterId"            = NEW."updaterId",
         "updaterName"          = NEW."updaterName"
       WHERE id = OLD.id;
-
-      IF NEW.archived IS DISTINCT FROM OLD.archived THEN
-        PERFORM set_archived('user', OLD.id, NEW.archived, OLD.archived);
-      END IF;
 
       IF NEW."rolesArrayAgg" IS NOT NULL
          AND NEW."rolesArrayAgg" IS DISTINCT FROM OLD."rolesArrayAgg" THEN

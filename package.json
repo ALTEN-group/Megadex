@@ -14,18 +14,28 @@
 		"start": "node src/server.js",
 		"dev": "node --watch src/server.js",
 		"test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+		"test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
 		"test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
 		"lint": "biome check src/ tests/",
 		"lint:fix": "biome check --write src/ tests/",
 		"format": "biome format src/ tests/",
 		"format:fix": "biome format --write src/ tests/"
 	},
-	"author": "Ludovic Cluber",
+	"author": "ALTEN",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ALTEN-group/Megadex.git"
+	},
+	"bugs": {
+		"url": "https://github.com/ALTEN-group/Megadex/issues"
+	},
+	"homepage": "https://github.com/ALTEN-group/Megadex#readme",
 	"dependencies": {
-		"@dwtechs/antity-pgsql": "0.23.0",
+		"@dwtechs/antity-pgsql": "0.25.0",
+		"@dwtechs/checkard": "3.7.0",
 		"@dwtechs/errandler-express": "0.1.1",
-		"@dwtechs/gatelin-express": "0.3.0",
+		"@dwtechs/gatelin-express": "0.4.0",
 		"@dwtechs/healix-express": "0.2.0",
 		"@dwtechs/servpico-express": "0.3.1",
 		"@dwtechs/sparray": "0.2.1",

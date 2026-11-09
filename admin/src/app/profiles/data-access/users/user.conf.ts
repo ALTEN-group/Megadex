@@ -12,11 +12,15 @@ import {
   INPUT_TYPES,
   maxlength,
   minlength,
+  patternValidator,
   required,
   StrictCrudItemOptions,
 } from "@dwtechs/ngx-crud-builder";
 import { SelectItem } from "@openng/optimus-ui/api";
-import { Lookup, UserLookups } from "app/profiles/data-access/lookups/lookup.model";
+import {
+  Lookup,
+  UserLookups,
+} from "app/profiles/data-access/lookups/lookup.model";
 import { Role } from "app/profiles/data-access/roles/role.model";
 import { User } from "app/profiles/data-access/users/user.model";
 
@@ -45,6 +49,11 @@ const toLookupItems = (items: Lookup[]): SelectItem[] =>
   items
     .map((item) => ({ label: item.trans, value: item.code }))
     .toSorted((a, b) => a.label.localeCompare(b.label));
+
+const httpUrlValidator = patternValidator({
+  pattern: /^https?:\/\/.+/,
+  message: "URL must start with http:// or https://",
+});
 
 const text = (
   key: keyof User,
@@ -124,8 +133,12 @@ export const USER_COLUMNS: (
         controlOptions: {},
       },
       text("phone", "Phone", 20),
-      text("address", "Address", 100, { columnOptions: { isSoftHidden: true } }),
-      text("zipCode", "Zip code", 10, { columnOptions: { isSoftHidden: true } }),
+      text("address", "Address", 100, {
+        columnOptions: { isSoftHidden: true },
+      }),
+      text("zipCode", "Zip code", 10, {
+        columnOptions: { isSoftHidden: true },
+      }),
       text("city", "City", 50),
       {
         key: "country",
@@ -152,7 +165,14 @@ export const USER_COLUMNS: (
       },
       text("job", "Job", 100, { columnOptions: { isSoftHidden: true } }),
       text("company", "Company", 50, { columnOptions: { isSoftHidden: true } }),
-      text("website", "Website", 255, { columnOptions: { isSoftHidden: true } }),
+      text("portrait", "Portrait URL", 255, {
+        columnOptions: { isSoftHidden: true },
+        controlOptions: { validators: [httpUrlValidator] },
+      }),
+      text("website", "Website", 255, {
+        columnOptions: { isSoftHidden: true },
+        controlOptions: { validators: [httpUrlValidator] },
+      }),
       {
         key: "socialsJsonAgg",
         label: "Social networks",
@@ -209,6 +229,7 @@ export const USER_COLUMNS: (
         },
         controlOptions: {
           width: "100%",
+          validators: [required],
         },
       },
       {

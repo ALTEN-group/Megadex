@@ -1,8 +1,8 @@
 import { HttpClient } from "@angular/common/http";
-import { inject, Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { ENTITY_API_PATHS } from "@core/app-config/app.api-paths";
-import { APP_CONFIG } from "@core/app-config/app-config.token";
 import { AdminEntity } from "@core/app-config/app.entities";
+import { APP_CONFIG } from "@core/app-config/app-config.token";
 import { map, Observable } from "rxjs";
 
 export interface SchemaRow {

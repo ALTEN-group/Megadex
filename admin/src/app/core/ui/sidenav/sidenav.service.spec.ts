@@ -57,11 +57,11 @@ describe("SidenavService", () => {
   });
 
   it("sets the active url from navigation events", () => {
-    of(new NavigationEnd(1, "/home", "/home"))
+    of(new NavigationEnd(1, "/users", "/users"))
       .pipe(service.setActiveUrl())
       .subscribe();
 
-    expect(service.activeUrl()).toBe("/home");
+    expect(service.activeUrl()).toBe("/users");
   });
 
   it("collapses on mobile widths", () => {

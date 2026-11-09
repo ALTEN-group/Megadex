@@ -13,7 +13,7 @@
   -->
 
   <changeSet id="data-01" author="lcluber">
-    <comment>Dev/demo users (2 named + 2000 bulk)</comment>
+    <comment>Dev/demo users (7 named + 2000 bulk)</comment>
     <sqlFile path="01-users.sql" splitStatements="false"/>
   </changeSet>
 

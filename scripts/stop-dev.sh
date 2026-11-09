@@ -23,8 +23,9 @@ echo -e "${YELLOW}🛑 Stopping development environment...${NC}"
 
 # Load environment variables
 if [[ -f docker/conf/.env.dev ]]; then
-  source "$(dirname "${BASH_SOURCE[0]}")/lib/load-env.sh"
-  load_env_file docker/conf/.env.dev
+  set -a
+  source <(grep -v '^#' docker/conf/.env.dev | grep -v '^UID=')
+  set +a
 fi
 
 # Set defaults if not loaded

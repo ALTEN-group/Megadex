@@ -9,9 +9,11 @@ describe("property", () => {
     expect(normalizer(null)).toBeNull();
   });
 
-  it("serializes object properties", () => {
-    const { normalizer } = property("conf", "object", ["SELECT"]);
-    expect(normalizer({ a: 1 })).toBe('{"a":1}');
+  it("serializes object and json properties", () => {
+    const { normalizer: objNorm } = property("conf", "object", ["SELECT"]);
+    expect(objNorm({ a: 1 })).toBe('{"a":1}');
+    const { normalizer: jsonNorm } = property("conf", "json", ["SELECT"]);
+    expect(jsonNorm([1, 2])).toBe("[1,2]");
   });
 });
 
@@ -26,6 +28,7 @@ describe("rolesToSchema", () => {
       "INSERT",
       "UPDATE",
     ]);
+    expect(res.locals.rows[1].readOnly).toBe(false);
     expect(next).toHaveBeenCalled();
   });
 });

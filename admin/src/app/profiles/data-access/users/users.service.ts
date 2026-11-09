@@ -1,8 +1,8 @@
 import {
   computed,
-  inject,
   Injectable,
   Injector,
+  inject,
   runInInjectionContext,
 } from "@angular/core";
 import { DomSanitizer } from "@angular/platform-browser";
@@ -24,7 +24,7 @@ const NO_LOOKUPS: UserLookups = { countries: [], civilities: [], genders: [] };
  * `birthdate` is a SQL DATE: send the picked calendar day (local) rather than a UTC
  * instant, which would shift it to the previous day east of UTC.
  */
-function toApiUser(item: User): User {
+export function toApiUser(item: User): User {
   const value = item.birthdate;
   if (!(value instanceof Date)) return item;
   const pad = (n: number) => String(n).padStart(2, "0");

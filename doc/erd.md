@@ -1,6 +1,6 @@
 ```mermaid
 ---
-caption: Diagramme entité-relation de megadex
+caption: Entity Relationship Diagram - Megadex
 ---
 
 erDiagram
@@ -9,16 +9,17 @@ erDiagram
   user ||--o{ user_social : "userId"
   social ||--o{ user_social : "socialId"
   preference ||--o{ preference_selection : "preferenceId"
+  history ||--|| audit : "log.audit view"
 
   user {
-    int id
+    int id PK
     gender gender
     civility civility
     string firstName
     string middleName
     string lastName
-    string nickname
-    string email
+    string nickname UK
+    string email UK
     string backupEmail
     string address
     string zipCode
@@ -46,19 +47,19 @@ erDiagram
   }
 
   user_role {
-    int userId
-    int roleId "Gatelin role id, no FK"
+    int userId PK, FK
+    int roleId PK "Gatelin role id, no FK"
   }
 
   user_social {
-    int userId
-    int socialId
+    int userId PK, FK
+    int socialId PK, FK
     string handle
   }
 
   social {
-    int id
-    string name
+    int id PK
+    string name UK
     string url
     boolean archived
     timestamptz archivedAt
@@ -71,10 +72,10 @@ erDiagram
   }
 
   preference {
-    int id
+    int id PK
     int userId "NULL = locked template"
-    string resourceName
-    string name
+    string resourceName UK
+    string name UK
     jsonb conf
     timestamptz createdAt
     int creatorId
@@ -85,34 +86,34 @@ erDiagram
   }
 
   preference_selection {
-    int userId
-    string resourceName
-    int preferenceId
+    int userId PK
+    string resourceName PK
+    int preferenceId FK
   }
 
   country_trans {
-    country code
-    language lang
+    country code PK
+    language lang PK
     string trans
     string nationality
   }
 
   civility_trans {
-    civility code
-    language lang
+    civility code PK
+    language lang PK
     string trans
     string abbr
   }
 
   gender_trans {
-    gender code
-    language lang
+    gender code PK
+    language lang PK
     string trans
     string abbr
   }
 
   history {
-    int id
+    int id PK
     timestamp tstamp
     string schemaName
     string tableName
@@ -121,6 +122,21 @@ erDiagram
     int userId
     string userName
     jsonb record
+  }
+
+  audit["log.audit VIEW"] {
+    int id
+    timestamp tstamp
+    string tableName
+    string operation
+    string action
+    int userId
+    string userName
+    int recordId
+    string[] changedKeys
+    string kind
+    jsonb record
+    jsonb previous
   }
 
 ```

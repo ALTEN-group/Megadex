@@ -1,6 +1,6 @@
 {
   "name": "admin",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0 --port 4200 --poll=2000",
@@ -11,20 +11,21 @@
     "test:coverage": "ng test --no-watch --coverage",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "e2e:install": "playwright install chromium"
+    "e2e:install": "playwright install chromium",
+    "demos": "playwright test --config=demos/playwright.config.ts && node demos/to-mp4.mjs"
   },
   "private": true,
   "author": "ALTEN",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DWTechs/megadex.git",
+    "url": "git+https://github.com/ALTEN-group/Megadex.git",
     "directory": "admin"
   },
   "bugs": {
-    "url": "https://github.com/DWTechs/megadex/issues"
+    "url": "https://github.com/ALTEN-group/Megadex/issues"
   },
-  "homepage": "https://github.com/DWTechs/megadex#readme",
+  "homepage": "https://github.com/ALTEN-group/Megadex#readme",
   "dependencies": {
     "@angular/animations": "22.1.8",
     "@angular/cdk": "22.1.8",
@@ -38,7 +39,7 @@
     "@angular/service-worker": "22.1.8",
     "@dwtechs/checkard": "3.7.0",
     "@dwtechs/ctrltab": "3.0.1",
-    "@dwtechs/ngx-crud-builder": "0.3.4",
+    "@dwtechs/ngx-crud-builder": "0.3.5",
     "@lcluber/frameratjs": "1.1.0",
     "@lcluber/mouettejs": "2.5.0",
     "@lcluber/roostrjs": "0.6.0",

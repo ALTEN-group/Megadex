@@ -3,8 +3,8 @@ import {
   Component,
   computed,
   inject,
-  viewChild,
   ViewEncapsulation,
+  viewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { NavigationEnd, Router, RouterLink } from "@angular/router";

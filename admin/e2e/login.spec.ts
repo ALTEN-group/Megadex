@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
-import { getAdminCredentials, hasAdminCredentials } from "./helpers/credentials";
+import { getAdminCredentials } from "./helpers/credentials";
 
 test.describe("Login page", () => {
   test("shows the connection form", async ({ page }) => {
@@ -31,9 +31,10 @@ test.describe("Login page", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("logs in with an admin user and lands on home", async ({ page }) => {
-    test.skip(!hasAdminCredentials(), "E2E_PASSWORD not set");
+  test("logs in with a mock admin user and lands on users", async ({
+    page,
+  }) => {
     await loginAs(page, getAdminCredentials());
-    await expect(page).toHaveURL(/\/home/);
+    await expect(page).toHaveURL(/\/users/);
   });
 });

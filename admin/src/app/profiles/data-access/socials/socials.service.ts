@@ -1,8 +1,8 @@
 import {
   computed,
-  inject,
   Injectable,
   Injector,
+  inject,
   runInInjectionContext,
 } from "@angular/core";
 import { AclService } from "@core/acl/acl.service";
@@ -14,6 +14,8 @@ import {
   Social,
   socialFactory,
 } from "app/profiles/data-access/socials/social.model";
+import { SocialsCatalogService } from "app/profiles/data-access/socials/socials-catalog.service";
+import { tap } from "rxjs";
 
 const socialsEntity: AdminEntity = "socials";
 
@@ -25,6 +27,7 @@ const socialsEntity: AdminEntity = "socials";
 })
 export class SocialsService {
   private readonly aclsService = inject(AclService);
+  private readonly socialsCatalog = inject(SocialsCatalogService);
   private readonly injector = inject(Injector);
   private readonly acls = computed(() =>
     this.aclsService.getEntityAcls(socialsEntity),
@@ -35,9 +38,12 @@ export class SocialsService {
 
   public readonly httpCalls: Calls<Social> = {
     get: this.crud.get,
-    create: this.crud.create,
-    update: this.crud.update,
-    archive: this.crud.archive,
+    create: (item) =>
+      this.crud.create(item).pipe(tap(() => this.socialsCatalog.invalidate())),
+    update: (item) =>
+      this.crud.update(item).pipe(tap(() => this.socialsCatalog.invalidate())),
+    archive: (ids) =>
+      this.crud.archive(ids).pipe(tap(() => this.socialsCatalog.invalidate())),
     getHistory: this.crud.getHistory,
   };
 

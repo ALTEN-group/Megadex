@@ -3,6 +3,6 @@
  * Extend this array when adding a new administrable entity.
  * Used by ACL, navigation, table configuration, preferences, etc.
  */
-export const ADMIN_ENTITIES = ["users", "socials"] as const;
+export const ADMIN_ENTITIES = ["users", "socials", "auditLogs"] as const;
 
 export type AdminEntity = (typeof ADMIN_ENTITIES)[number];

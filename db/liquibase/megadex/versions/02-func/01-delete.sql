@@ -2,12 +2,15 @@
 -- History is left in place; the delete-old-history job ages it out.
 -- p_schema_name is kept so callers can stay SELECT delete($1, $2, $3).
 -- Return type changed from VOID: CREATE OR REPLACE cannot alter it.
+-- The cutoff is TIMESTAMPTZ to match the archivedAt columns; a naive TIMESTAMP
+-- would drop the offset the driver sends and reintroduce a local-time cutoff.
 DROP FUNCTION IF EXISTS delete(TEXT, TEXT, TIMESTAMP);
+DROP FUNCTION IF EXISTS delete(TEXT, TEXT, TIMESTAMPTZ);
 
 CREATE FUNCTION delete(
   p_schema_name TEXT,
   p_table_name TEXT,
-  p_archived_at TIMESTAMP
+  p_archived_at TIMESTAMPTZ
 ) RETURNS INTEGER AS $$
 DECLARE
   n INT;

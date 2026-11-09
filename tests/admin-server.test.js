@@ -26,15 +26,17 @@ describe("bundled admin server", () => {
     );
   });
 
-  it("injects the runtime base path and SSO token key", () => {
+  it("injects the runtime base path, SSO token key, and roles search URL", () => {
     const rendered = renderAdminIndex(indexHtml, {
       ADMIN_BASE_PATH: "/accounts",
       ADMIN_SSO_TOKEN_KEY: "shared_access_token",
+      ADMIN_ROLES_SEARCH_URL:
+        "https://auth.example.test/api/gatelin/roles/search",
     });
 
     expect(rendered).toContain('<base href="/accounts/">');
     expect(rendered).toContain(
-      'window.__MEGADEX_ADMIN__={"ssoTokenKey":"shared_access_token"};',
+      'window.__MEGADEX_ADMIN__={"ssoTokenKey":"shared_access_token","rolesSearchUrl":"https://auth.example.test/api/gatelin/roles/search"};',
     );
   });
 

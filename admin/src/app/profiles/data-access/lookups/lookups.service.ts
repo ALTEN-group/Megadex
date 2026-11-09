@@ -1,13 +1,19 @@
 import { HttpClient } from "@angular/common/http";
-import { inject, Injectable, LOCALE_ID } from "@angular/core";
+import { Injectable, inject, LOCALE_ID } from "@angular/core";
 import { APP_CONFIG } from "@core/app-config/app-config.token";
-import { Lookup, UserLookups } from "app/profiles/data-access/lookups/lookup.model";
+import {
+  Lookup,
+  UserLookups,
+} from "app/profiles/data-access/lookups/lookup.model";
 import { catchError, forkJoin, map, Observable, of, shareReplay } from "rxjs";
 
 type LookupEndpoint = "countries" | "civilities" | "genders";
 
+const SUPPORTED_LOOKUP_LANGS = new Set(["en", "fr"]);
+
 /**
- * Read-only Megadex reference data, filtered on the admin locale and cached.
+ * Read-only Megadex reference data, filtered on the admin locale (falling back
+ * to `"en"` when the browser/app locale is not seeded in the database) and cached.
  */
 @Injectable({
   providedIn: "root",
@@ -15,7 +21,10 @@ type LookupEndpoint = "countries" | "civilities" | "genders";
 export class LookupsService {
   private readonly http = inject(HttpClient);
   private readonly api = inject(APP_CONFIG).megadexApi;
-  private readonly lang = inject(LOCALE_ID).split("-")[0];
+  private readonly rawLang = inject(LOCALE_ID).split("-")[0].toLowerCase();
+  private readonly lang = SUPPORTED_LOOKUP_LANGS.has(this.rawLang)
+    ? this.rawLang
+    : "en";
   private all$: Observable<UserLookups> | null = null;
 
   public getAndCacheAll(): Observable<UserLookups> {

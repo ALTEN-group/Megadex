@@ -25,12 +25,33 @@ export default {
   // Transform ES modules from node_modules
   transformIgnorePatterns: ["/node_modules/(?!(@dwtechs)/)"],
 
+  // @dwtechs/checkard's package.json omits "type": "module", so Jest's
+  // native-ESM loader misdetects dist/ch.js (which uses `export {}`) as
+  // CommonJS and fails to parse it. Force resolution to the real CJS build.
+  moduleNameMapper: {
+    "^@dwtechs/checkard$":
+      "<rootDir>/node_modules/@dwtechs/checkard/dist/ch.cjs.js",
+  },
+
   // Coverage settings
-  collectCoverageFrom: ["src/**/*.js", "!src/app.js", "!**/node_modules/**"],
+  collectCoverageFrom: ["src/**/*.js", "!src/server.js", "!**/node_modules/**"],
 
   // Test timeout
   testTimeout: 10000,
 
   // Verbose output
   verbose: true,
+
+  // Jest 30 emits a "worker failed to exit gracefully" warning when a worker
+  // exceeds the hard-coded 500 ms graceful shutdown deadline. With
+  // `--experimental-vm-modules`, ESM module-graph teardown intermittently
+  // exceeds that budget on child processes even in leak-free code. Using
+  // worker threads instead avoids the fork/exit overhead and shuts down
+  // well within the deadline.
+  workerThreads: true,
+
+  // `forceExit` covers the *main* Jest process: if for any reason the
+  // top-level process still has pending async work after tests finish, exit
+  // rather than hang.
+  forceExit: true,
 };
