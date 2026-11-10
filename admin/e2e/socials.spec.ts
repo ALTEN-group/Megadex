@@ -47,7 +47,7 @@ test.describe("Social networks CRUD", () => {
     });
     await editDialog.getByRole("button", { name: "Archive" }).click();
     const confirm = page.getByRole("dialog").filter({
-      hasText: /archive this view/i,
+      hasText: /archive this item/i,
     });
     await expect(confirm).toBeVisible();
 
