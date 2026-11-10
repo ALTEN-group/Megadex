@@ -15,7 +15,7 @@ import { EntityRouteMapping } from "@core/acl/acls.model";
  *   96=archiveSocials   97=getSocialSchema
  *   98-103=countries / civilities / genders lookups (search + schema)
  *   104=searchAudit     105=updateOwnProfile
- *   108=restoreUsers (explicit ID in gatelin-data/07-restore-users.sql)
+ *   106=getOwnProfile   107=restoreUsers
  */
 export const ENTITY_ROUTE_MAPPING: EntityRouteMapping = {
   users: {
@@ -24,7 +24,7 @@ export const ENTITY_ROUTE_MAPPING: EntityRouteMapping = {
     create: 84, // addUsers
     update: 85, // updateUsers
     archive: 86, // archiveUsers
-    restore: 108, // restoreUsers
+    restore: 107, // restoreUsers
   },
   socials: {
     get: 92, // searchSocials

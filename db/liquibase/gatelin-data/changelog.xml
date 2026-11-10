@@ -27,19 +27,5 @@
     <comment>Allowed browser Origins for the admin UI (CORS whitelist)</comment>
     <sqlFile path="05-cors.sql"/>
   </changeSet>
-  <changeSet id="megadex-data-06" author="lcluber">
-    <comment>Authenticated user profile lookup and permissions for every non-archived role</comment>
-    <sqlFile path="06-own-profile.sql" splitStatements="false"/>
-    <rollback>
-      DELETE FROM route WHERE name = 'getOwnProfile';
-    </rollback>
-  </changeSet>
-  <changeSet id="megadex-data-07" author="lcluber">
-    <comment>Restore archived user profiles for Super admin and Admin</comment>
-    <sqlFile path="07-restore-users.sql" splitStatements="false"/>
-    <rollback>
-      DELETE FROM route WHERE name = 'restoreUsers';
-    </rollback>
-  </changeSet>
 
 </databaseChangeLog>

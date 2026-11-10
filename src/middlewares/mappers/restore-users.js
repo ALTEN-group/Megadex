@@ -3,9 +3,12 @@ import { execute } from "@dwtechs/antity-pgsql";
 import { isArray, isObject, isValidInteger } from "@dwtechs/checkard";
 
 /**
+ * Restore counterpart of antity-pgsql's `archive` handler, which has no restore yet.
+ * Accepts bare ids or `{ id }` rows; credentials and sessions stay archived.
+ *
  * @type {import("express").RequestHandler}
  */
-export function prepareUserRestore(req, _res, next) {
+export async function restoreUsers(req, res, next) {
   const rows = req.body?.rows;
   if (!isArray(rows, ">", 0))
     return next({ statusCode: 400, message: "Missing rows in req.body" });
@@ -14,27 +17,18 @@ export function prepareUserRestore(req, _res, next) {
   if (ids.some((id) => !isValidInteger(id, 1, undefined, false)))
     return next({ statusCode: 400, message: "Invalid user id for restore" });
 
-  req.body = { rows: [...new Set(ids.map(Number))].map((id) => ({ id })) };
-  next();
-}
-
-/**
- * Restores profiles through the audited view; credentials and sessions stay archived.
- *
- * @type {import("express").RequestHandler}
- */
-export async function restoreUsers(req, res, next) {
+  const l = res.locals;
   try {
     await execute(
       `UPDATE users
        SET archived = false, "updaterId" = $2, "updaterName" = $3
        WHERE id = ANY($1::int[]) AND archived = true`,
       [
-        req.body.rows.map((row) => row.id),
-        res.locals.consumer.userId,
-        res.locals.consumer.nickname,
+        [...new Set(ids.map(Number))],
+        l.consumer.userId,
+        l.consumer.nickname,
       ],
-      res.locals.dbClient ?? null,
+      l.dbClient ?? null,
     );
     next();
   } catch (error) {

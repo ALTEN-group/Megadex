@@ -38,7 +38,7 @@ describe("UsersService restore", () => {
     expect(service.httpCalls().restore).toBeDefined();
     acls.set({ restore: { allowed: false, operations: [], fields: [] } });
     expect(service.httpCalls().restore).toBeUndefined();
-    expect(ENTITY_ROUTE_MAPPING.users.restore).toBe(108);
+    expect(ENTITY_ROUTE_MAPPING.users.restore).toBe(107);
   });
 
   it("posts selected user IDs to the restore endpoint", () => {
