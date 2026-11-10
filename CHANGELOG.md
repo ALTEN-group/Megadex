@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Prevent users from archiving their own account, including in mixed batches.
+- Register authenticated profile lookup in Gatelin.
+- Add permission-controlled restoration of archived user profiles in the admin CRUD and API. Passwords and previous sessions remain archived.
+
 # 0.1.0-alpha.1 (Nov 9th 2026)
 
   - **User profile & reference-data service:** user profile management (`users` view with aggregated `roles` and `socialsJsonAgg`), social networks catalog (`social`), per-user table view preferences (`preference` with locked system templates), localized reference lookups (`country_trans`, `civility_trans`, `gender_trans`), database-level history triggers, and Angular admin UI

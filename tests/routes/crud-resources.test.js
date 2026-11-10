@@ -226,12 +226,23 @@ describe.each(RESOURCES)("POST $mount/archive ($name)", ({ name, mount }) => {
   });
 
   it("routes to archive", async () => {
-    const res = await request(app)
-      .post(`${mount}/archive`)
-      .set(CONSUMER_HEADERS)
-      .send({ rows: [{ id: 1 }] });
-    expect(res.status).toBe(200);
-    expect(entityArchives[name]).toHaveBeenCalledTimes(1);
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: async () => ({ rows: [] }),
+    });
+    try {
+      const res = await request(app)
+        .post(`${mount}/archive`)
+        .set(CONSUMER_HEADERS)
+        .send({ rows: [{ id: 2 }] });
+      expect(res.status).toBe(200);
+      expect(entityArchives[name]).toHaveBeenCalledTimes(1);
+    } finally {
+      global.fetch = originalFetch;
+    }
   });
 });
 
@@ -373,5 +384,23 @@ describe("User management service behaviors", () => {
     expect(allowed.status).toBe(200);
     const [req] = entityUpdates.users.mock.calls[0];
     expect(req.body.rows).toEqual([{ nickname: "newname", id: 1 }]);
+  });
+
+  it("rejects archiving the authenticated user, including in a mixed batch", async () => {
+    entityArchives.users.mockClear();
+
+    const selfRes = await request(app)
+      .post("/megadex/users/archive")
+      .set(CONSUMER_HEADERS)
+      .send({ rows: [{ id: 1 }] });
+    expect(selfRes.status).toBe(403);
+    expect(entityArchives.users).not.toHaveBeenCalled();
+
+    const mixedRes = await request(app)
+      .post("/megadex/users/archive")
+      .set(CONSUMER_HEADERS)
+      .send({ rows: [{ id: 2 }, { id: "1" }] });
+    expect(mixedRes.status).toBe(403);
+    expect(entityArchives.users).not.toHaveBeenCalled();
   });
 });

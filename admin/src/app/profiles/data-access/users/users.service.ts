@@ -51,13 +51,14 @@ export class UsersService {
     endpoint: ENTITY_API_PATHS[usersEntity],
   });
 
-  public readonly httpCalls: Calls<User> = {
+  public readonly httpCalls = computed<Calls<User>>(() => ({
     get: this.crud.get,
     create: (item) => this.crud.create(toApiUser(item)),
     update: (item) => this.crud.update(toApiUser(item)),
     archive: this.crud.archive,
+    restore: this.acls()?.restore?.allowed ? this.crud.restore : undefined,
     getHistory: this.crud.getHistory,
-  };
+  }));
 
   public readonly config = (payload: ActivatedRouteSnapshot) =>
     computed(() =>

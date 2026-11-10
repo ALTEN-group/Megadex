@@ -1,5 +1,6 @@
 // @ts-check
 import { execute } from "@dwtechs/antity-pgsql";
+import { isArray, isInteger } from "@dwtechs/checkard";
 import express from "express";
 import userEnt from "../entities/user.js";
 import {
@@ -10,6 +11,10 @@ import {
 import { archivePwd } from "../middlewares/http/archive-pwd.js";
 import { createPwd } from "../middlewares/http/create-pwd.js";
 import { syncUserLifecycle } from "../middlewares/http/sync-user-lifecycle.js";
+import {
+  prepareUserRestore,
+  restoreUsers,
+} from "../middlewares/mappers/restore-users.js";
 import schema from "../middlewares/schema.js";
 import {
   mapUserRoles,
@@ -89,6 +94,31 @@ function scopeSelfUpdate(req, res, next) {
   next();
 }
 
+/**
+ * Prevents an authenticated consumer from archiving their own user account.
+ *
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {import("express").NextFunction} next
+ */
+function preventSelfArchive(req, res, next) {
+  const rows = isArray(req.body?.rows) ? req.body.rows : [];
+  const userId = res.locals.consumer.userId;
+  const includesSelf = rows.some(
+    (row) =>
+      (isInteger(row?.id) || isInteger(row?.id, false)) &&
+      Number(row.id) === userId,
+  );
+
+  if (includesSelf) {
+    return next({
+      statusCode: 403,
+      message: "You cannot archive your own user account",
+    });
+  }
+  next();
+}
+
 // Intentionally public to trusted service-network callers: Gatelin needs this
 // before it has a consumer identity. Database filters still constrain lookup.
 router.post(
@@ -153,8 +183,16 @@ router.post(
   "/archive",
   requireConsumer,
   enforceAcl(userEnt, "existing"),
+  preventSelfArchive,
   userEnt.archive,
   archivePwd,
+);
+router.post(
+  "/restore",
+  requireConsumer,
+  prepareUserRestore,
+  enforceAcl(userEnt, "existing"),
+  restoreUsers,
 );
 router.get(
   "/schema",

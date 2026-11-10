@@ -25,6 +25,12 @@ User profile, preferences, and reference-data service: user accounts with aggreg
 - **History & audit logs** — Database-level change tracking (`user`, `user_role`, `user_social`, `social`) and unified `log.audit` view
 - **Admin UI** — Angular front-end to manage users, social network catalogs, and audit logs
 
+Archived users can be restored from the Users CRUD dialog or a table selection.
+Restoration clears the profile's archive state and timestamp, preserving its active/inactive state.
+Foxnox passwords remain archived and require a separate password reset; previous sessions stay revoked.
+`POST /megadex/users/restore` accepts `{ "rows": [1, 2] }` and requires authenticated
+consumer headers. Gatelin grants the restore route to Super admin and Admin.
+
 ## Documentation
 
 Full documentation is available at **[https://alten-group.github.io/Megadex](https://alten-group.github.io/Megadex)**.

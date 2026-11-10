@@ -52,6 +52,8 @@ Waits for Foxnox to be healthy, clears any previous mock `pwd` rows, and calls F
 
 > If login ever fails with a **404 on `POST /api/gatelin/sessions`**, Gatelin is relaying the 404 that Foxnox returns when a user has no `pwd` row. Run `./scripts/setup-mocks.sh`.
 
+> A **404 "Route not found" on `GET /api/megadex/users/me`** means Gatelin's route registration is missing. Apply the pending Gatelin data migrations, then restart Gatelin to reload its route cache. The `megadex-data-06` changeset registers this protected endpoint for every non-archived role; no database reset is needed.
+
 ## Development
 
 ### Start / Restart
