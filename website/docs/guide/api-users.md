@@ -176,6 +176,32 @@ x-consumer-name: admin
 
 **Response:** `204 No Content`
 
+A consumer cannot archive their own account: a batch containing the caller's id is rejected with `403` and nothing is archived.
+
+## Restore Users
+
+Restores archived user profiles (`archived = false`, `archivedAt = NULL`), preserving their `active` state. Rows accept bare ids or `{ "id": n }` objects; rows that are not archived are left unchanged. Gatelin grants this route to Super admin and Admin; the admin UI exposes it from the Users CRUD dialog or a table selection.
+
+```http
+POST /megadex/users/restore
+Content-Type: application/json
+x-consumer-user-id: 2
+x-consumer-name: admin
+
+{
+  "rows": [5, 6]
+}
+```
+
+| Status | Meaning |
+| --- | --- |
+| `200` | Restored (also returned when no row was archived) |
+| `400` | Missing `rows` or invalid user id |
+| `401` | Missing consumer headers |
+| `403` | Rows outside the caller's ACL conditions |
+
+Foxnox passwords stay archived and require a separate password reset; previous sessions stay revoked.
+
 ## Get User History
 
 Returns the combined change history for user `:id` across `"user"`, `user_role`, and `user_social`.

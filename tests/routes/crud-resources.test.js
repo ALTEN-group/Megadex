@@ -381,7 +381,7 @@ describe("User management service behaviors", () => {
     expect(req.body.rows).toEqual([{ nickname: "newname", id: 1 }]);
   });
 
-  it("rejects archiving the authenticated user, including in a mixed batch", async () => {
+  it("rejects archiving the authenticated user, including mixed batches and bare ids", async () => {
     entityArchives.users.mockClear();
 
     const selfRes = await request(app)
@@ -396,6 +396,13 @@ describe("User management service behaviors", () => {
       .set(CONSUMER_HEADERS)
       .send({ rows: [{ id: 2 }, { id: "1" }] });
     expect(mixedRes.status).toBe(403);
+    expect(entityArchives.users).not.toHaveBeenCalled();
+
+    const bareIdsRes = await request(app)
+      .post("/megadex/users/archive")
+      .set(CONSUMER_HEADERS)
+      .send({ rows: [2, 1] });
+    expect(bareIdsRes.status).toBe(403);
     expect(entityArchives.users).not.toHaveBeenCalled();
   });
 });

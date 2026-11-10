@@ -1,6 +1,6 @@
 // @ts-check
 import { execute } from "@dwtechs/antity-pgsql";
-import { isArray, isInteger } from "@dwtechs/checkard";
+import { isArray, isObject } from "@dwtechs/checkard";
 import express from "express";
 import userEnt from "../entities/user.js";
 import {
@@ -101,10 +101,9 @@ function scopeSelfUpdate(req, res, next) {
 function preventSelfArchive(req, res, next) {
   const rows = isArray(req.body?.rows) ? req.body.rows : [];
   const userId = res.locals.consumer.userId;
+  // Archive accepts bare ids (ngx-crud-builder) or `{ id }` rows.
   const includesSelf = rows.some(
-    (row) =>
-      (isInteger(row?.id) || isInteger(row?.id, false)) &&
-      Number(row.id) === userId,
+    (row) => Number(isObject(row) ? row.id : row) === userId,
   );
 
   if (includesSelf) {

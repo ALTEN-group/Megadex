@@ -8,6 +8,6 @@ describe("socialFactory", () => {
     expect(social.name).toBe("");
     expect(social.url).toBeNull();
     expect(social.archived).toBe(false);
-    expect(social.archivedAt).toBeUndefined();
+    expect(social.archivedAt).toBeNull();
   });
 });
