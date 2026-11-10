@@ -1,10 +1,10 @@
 // @ts-check
-import { execute } from "@dwtechs/antity-pgsql";
 import { isArray, isObject, isValidInteger } from "@dwtechs/checkard";
+import { restore } from "../../services/user.js";
 
 /**
  * Restore counterpart of antity-pgsql's `archive` handler, which has no restore yet.
- * Accepts bare ids or `{ id }` rows; credentials and sessions stay archived.
+ * Maps bare ids or `{ id }` rows to unique user ids before restoring them.
  *
  * @type {import("express").RequestHandler}
  */
@@ -17,18 +17,11 @@ export async function restoreUsers(req, res, next) {
   if (ids.some((id) => !isValidInteger(id, 1, undefined, false)))
     return next({ statusCode: 400, message: "Invalid user id for restore" });
 
-  const l = res.locals;
   try {
-    await execute(
-      `UPDATE users
-       SET archived = false, "updaterId" = $2, "updaterName" = $3
-       WHERE id = ANY($1::int[]) AND archived = true`,
-      [
-        [...new Set(ids.map(Number))],
-        l.consumer.userId,
-        l.consumer.nickname,
-      ],
-      l.dbClient ?? null,
+    await restore(
+      [...new Set(ids.map(Number))],
+      res.locals.consumer,
+      res.locals.dbClient ?? null,
     );
     next();
   } catch (error) {

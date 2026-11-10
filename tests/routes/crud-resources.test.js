@@ -140,6 +140,12 @@ for (const resource of RESOURCES) {
   );
 }
 
+// archivePwd calls Foxnox/Gatelin when their URLs are set; these tests only check routing.
+jest.unstable_mockModule(
+  path.join(__dirname, "../../src/middlewares/http/archive-pwd.js"),
+  () => ({ archivePwd: jest.fn((_req, _res, next) => next()) }),
+);
+
 const { default: app } = await import("../../src/app.js");
 
 describe.each(RESOURCES)(
@@ -226,23 +232,12 @@ describe.each(RESOURCES)("POST $mount/archive ($name)", ({ name, mount }) => {
   });
 
   it("routes to archive", async () => {
-    const originalFetch = global.fetch;
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      json: async () => ({ rows: [] }),
-    });
-    try {
-      const res = await request(app)
-        .post(`${mount}/archive`)
-        .set(CONSUMER_HEADERS)
-        .send({ rows: [{ id: 2 }] });
-      expect(res.status).toBe(200);
-      expect(entityArchives[name]).toHaveBeenCalledTimes(1);
-    } finally {
-      global.fetch = originalFetch;
-    }
+    const res = await request(app)
+      .post(`${mount}/archive`)
+      .set(CONSUMER_HEADERS)
+      .send({ rows: [{ id: 2 }] });
+    expect(res.status).toBe(200);
+    expect(entityArchives[name]).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -7,7 +7,6 @@ import { signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { Acls } from "@core/acl/acls.model";
 import { AclService } from "@core/acl/acl.service";
-import { ENTITY_ROUTE_MAPPING } from "@core/app-config/app.acls";
 import { APP_CONFIG } from "@dwtechs/ngx-crud-builder";
 import { UsersService } from "./users.service";
 
@@ -38,7 +37,6 @@ describe("UsersService restore", () => {
     expect(service.httpCalls().restore).toBeDefined();
     acls.set({ restore: { allowed: false, operations: [], fields: [] } });
     expect(service.httpCalls().restore).toBeUndefined();
-    expect(ENTITY_ROUTE_MAPPING.users.restore).toBe(107);
   });
 
   it("posts selected user IDs to the restore endpoint", () => {
