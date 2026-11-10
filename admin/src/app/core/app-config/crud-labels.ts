@@ -116,13 +116,13 @@ export const CRUD_LABELS_CONFIG: Partial<CrudLabels> = {
     confirmationConfirm: "Confirm",
     defaultViewName: "Default view",
     deleteConfirmationMultiple: (count) =>
-      `Are you sure you want to archive these ${count} views?`,
-    deleteConfirmationSingle: "Are you sure you want to archive this view?",
+      `Are you sure you want to archive these ${count} items?`,
+    deleteConfirmationSingle: "Are you sure you want to archive this item?",
     exportFailedDetail:
       "An error occurred while exporting the data. Please try again later.",
     exportFailedTitle: "Export failed",
     restoreConfirmationMultiple: (count) =>
-      `Are you sure you want to restore these ${count} views?`,
-    restoreConfirmationSingle: "Are you sure you want to restore this view?",
+      `Are you sure you want to restore these ${count} items?`,
+    restoreConfirmationSingle: "Are you sure you want to restore this item?",
   },
 };
