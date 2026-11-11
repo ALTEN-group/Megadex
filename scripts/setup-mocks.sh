@@ -175,7 +175,8 @@ while IFS=$'\t' read -r uid pwd; do
   sedi -e "s|__EMAIL_${uid}__|$(sed_escape "$email")|g" -e "s|__PWD_${uid}__|$(sed_escape "$pwd")|g" "$SWAGGER_FILE"
   # 6. The first user becomes the e2e login (docker/conf/.env.dev is gitignored).
   if [[ "$E2E_SET" == false ]]; then
-    sedi -e "s|^E2E_EMAIL=.*|E2E_EMAIL=$(sed_escape "$email")|" -e "s|^E2E_PASSWORD=.*|E2E_PASSWORD=$(sed_escape "$pwd")|" "$ENV_FILE"
+    # Single quotes: scripts `source` this file and generated passwords may contain shell metacharacters.
+    sedi -e "s|^E2E_EMAIL=.*|E2E_EMAIL=$(sed_escape "$email")|" -e "s|^E2E_PASSWORD=.*|E2E_PASSWORD='$(sed_escape "$pwd")'|" "$ENV_FILE"
     E2E_SET=true
   fi
 done <<< "$PAIRS"
