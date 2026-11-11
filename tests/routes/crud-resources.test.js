@@ -340,6 +340,7 @@ describe("POST /megadex/users Foxnox onboarding integration", () => {
       ok: true,
       status: 200,
       statusText: "OK",
+      json: async () => ({}),
     });
     global.fetch = /** @type {any} */ (fetchMock);
 

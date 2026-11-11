@@ -50,6 +50,7 @@ describe("createPwd middleware (Foxnox credential provisioning)", () => {
       ok: true,
       status: 200,
       statusText: "OK",
+      json: async () => ({}),
     });
     global.fetch = /** @type {any} */ (fetchMock);
 
@@ -66,9 +67,9 @@ describe("createPwd middleware (Foxnox credential provisioning)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("http://foxnox:3000/foxnox/pwd");
-    expect(init.method).toBe("POST");
+    expect(init.method).toBe("post");
     expect(init.headers).toEqual({
-      "content-type": "application/json",
+      "Content-Type": "application/json",
       accept: "application/json",
       "x-consumer-user-id": "2",
       "x-consumer-name": "alice",
@@ -86,6 +87,7 @@ describe("createPwd middleware (Foxnox credential provisioning)", () => {
       ok: false,
       status: 422,
       statusText: "Unprocessable Entity",
+      json: async () => ({}),
     });
     global.fetch = /** @type {any} */ (fetchMock);
 

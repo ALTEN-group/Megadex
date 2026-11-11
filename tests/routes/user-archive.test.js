@@ -131,9 +131,9 @@ describe("POST /megadex/users/archive", () => {
       expect(fetchMock).toHaveBeenCalledTimes(5);
       for (const [, options] of fetchMock.mock.calls) {
         expect(options).toMatchObject({
-          method: "POST",
+          method: "post",
           headers: {
-            "content-type": "application/json",
+            "Content-Type": "application/json",
             accept: "application/json",
             ...CONSUMER,
           },
@@ -228,7 +228,12 @@ describe("POST /megadex/users/archive", () => {
       fetchMock.mockImplementation(async (url, options) => {
         if (url !== `${base}/archive`) return normalFetch(url, options);
         if (kind === "http")
-          return { ok: false, status: 503, statusText: "Unavailable" };
+          return {
+            ok: false,
+            status: 503,
+            statusText: "Unavailable",
+            json: async () => null,
+          };
         throw Object.assign(new Error("upstream timed out"), { name: kind });
       });
       expectError(await archive(), status, RETRY);
@@ -255,7 +260,12 @@ describe("POST /megadex/users/archive", () => {
       fetchMock.mockImplementation(async (url, options) => {
         if (url !== `${base}/search`) return normalFetch(url, options);
         if (kind === "http")
-          return { ok: false, status: 500, statusText: "Unavailable" };
+          return {
+            ok: false,
+            status: 500,
+            statusText: "Unavailable",
+            json: async () => null,
+          };
         if (kind === "invalid rows") return response([{ userId: 7 }]);
         throw Object.assign(new Error("upstream failed"), {
           name: kind === "timeout" ? "TimeoutError" : "TypeError",
@@ -280,7 +290,8 @@ describe("POST /megadex/users/archive", () => {
           started.resolve();
           return gate.promise;
         }
-        if (url.endsWith("/archive")) return { ok: false, status: 500 };
+        if (url.endsWith("/archive"))
+          return { ok: false, status: 500, json: async () => null };
         return normalFetch(url, options);
       });
       let finished = false;
@@ -317,7 +328,7 @@ describe("POST /megadex/users/archive", () => {
             : url === `${SESSIONS}/archive` && rows[0].id === 202;
         if (failOnce && isFailure) {
           failOnce = false;
-          return { ok: false, status: 503 };
+          return { ok: false, status: 503, json: async () => null };
         }
         if (url === `${PASSWORDS}/archive`) passwordActive = false;
         else if (url === `${SESSIONS}/archive`)
@@ -357,7 +368,7 @@ describe("POST /megadex/users/archive", () => {
     fetchMock.mockImplementation(async (url, options) => {
       if (url === `${SESSIONS}/archive`) {
         if (JSON.parse(options.body).rows[0].id === 201)
-          return { ok: false, status: 500 };
+          return { ok: false, status: 500, json: async () => null };
         started.resolve();
         return gate.promise;
       }

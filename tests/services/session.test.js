@@ -2,7 +2,7 @@
 import { jest } from "@jest/globals";
 
 jest.unstable_mockModule("@dwtechs/winstan", () => ({
-  log: { error: jest.fn() },
+  log: { error: jest.fn(), debug: jest.fn() },
 }));
 const { revokeUserSessions } = await import("../../src/services/session.js");
 
@@ -34,12 +34,12 @@ describe("revokeUserSessions", () => {
     searchResult({
       rows: [{ id: 1 }, { id: "201" }, { id: 201 }, { id: "1" }],
     });
-    fetchMock.mockResolvedValue({ ok: true });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({}) });
 
     await expect(revokeUserSessions([7, 8], consumer)).resolves.toBeUndefined();
 
     const headers = {
-      "content-type": "application/json",
+      "Content-Type": "application/json",
       accept: "application/json",
       "x-consumer-user-id": "2",
       "x-consumer-name": "alice",
@@ -48,7 +48,7 @@ describe("revokeUserSessions", () => {
     expect(fetchMock.mock.calls[0]).toEqual([
       `${baseUrl}/search`,
       {
-        method: "POST",
+        method: "post",
         headers,
         body: JSON.stringify({
           filters: {
@@ -63,7 +63,7 @@ describe("revokeUserSessions", () => {
       expect(fetchMock.mock.calls[index + 1]).toEqual([
         `${baseUrl}/archive`,
         {
-          method: "POST",
+          method: "post",
           headers,
           body: JSON.stringify({ rows: [{ id }] }),
           signal: expect.any(AbortSignal),
@@ -131,17 +131,18 @@ describe("revokeUserSessions", () => {
   );
 
   it.each(["search", "archive"])(
-    "should propagate a %s HTTP failure as 502",
+    "should propagate a %s HTTP failure with the upstream status",
     async (stage) => {
       if (stage === "archive") searchResult({ rows: [{ id: 201 }] });
       fetchMock.mockResolvedValueOnce({
         ok: false,
+        json: async () => null,
         status: 500,
         statusText: "Internal Server Error",
       });
       await expect(revokeUserSessions([7], consumer)).rejects.toMatchObject({
-        statusCode: 502,
-        message: `HTTP(502): Gatelin consumer ${stage} failed`,
+        statusCode: 500,
+        message: "HTTP(500): Internal Server Error",
       });
       expect(fetchMock).toHaveBeenCalledTimes(stage === "search" ? 1 : 2);
     },
@@ -178,7 +179,7 @@ describe("revokeUserSessions", () => {
       json: jest.fn().mockRejectedValue(new SyntaxError("invalid JSON")),
     });
     await expect(revokeUserSessions([7], consumer)).rejects.toMatchObject({
-      statusCode: 503,
+      statusCode: 502,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -195,14 +196,18 @@ describe("revokeUserSessions", () => {
     async (failure) => {
       searchResult({ rows: [{ id: 201 }, { id: 202 }, { id: 203 }] });
       if (failure === "http")
-        fetchMock.mockResolvedValueOnce({ ok: false, status: 500 });
+        fetchMock.mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: async () => null,
+        });
       else
         fetchMock.mockRejectedValueOnce(
           Object.assign(new Error("fetch failed"), {
             name: failure === "timeout" ? "TimeoutError" : "TypeError",
           }),
         );
-      fetchMock.mockResolvedValueOnce({ ok: true });
+      fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
       let resolveLast;
       fetchMock.mockReturnValueOnce(
         new Promise((resolve) => {
@@ -229,11 +234,11 @@ describe("revokeUserSessions", () => {
       );
       expect(settled).not.toHaveBeenCalled();
 
-      resolveLast({ ok: true });
+      resolveLast({ ok: true, json: async () => ({}) });
       const error = await pending;
       expect(error).toMatchObject({
         statusCode:
-          failure === "http" ? 502 : failure === "timeout" ? 504 : 503,
+          failure === "http" ? 500 : failure === "timeout" ? 504 : 503,
       });
       expect(settled.mock.calls).toEqual([["failure"]]);
     },

@@ -2,7 +2,7 @@
 import { jest } from "@jest/globals";
 
 jest.unstable_mockModule("@dwtechs/winstan", () => ({
-  log: { error: jest.fn() },
+  log: { error: jest.fn(), debug: jest.fn() },
 }));
 const { archivePasswords } = await import("../../src/services/pwd.js");
 
@@ -34,13 +34,13 @@ describe("archivePasswords", () => {
     searchResult({
       rows: [{ id: 1 }, { id: "101" }, { id: 101 }, { id: "1" }],
     });
-    fetchMock.mockResolvedValueOnce({ ok: true });
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
     await expect(archivePasswords([7, 8], consumer)).resolves.toBeUndefined();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const headers = {
-      "content-type": "application/json",
+      "Content-Type": "application/json",
       accept: "application/json",
       "x-consumer-user-id": "2",
       "x-consumer-name": "alice",
@@ -48,7 +48,7 @@ describe("archivePasswords", () => {
     expect(fetchMock.mock.calls[0]).toEqual([
       `${baseUrl}/search`,
       {
-        method: "POST",
+        method: "post",
         headers,
         body: JSON.stringify({
           filters: {
@@ -63,7 +63,7 @@ describe("archivePasswords", () => {
     expect(fetchMock.mock.calls[1]).toEqual([
       `${baseUrl}/archive`,
       {
-        method: "POST",
+        method: "post",
         headers,
         body: JSON.stringify({ rows: [{ id: 1 }, { id: 101 }] }),
         signal: expect.any(AbortSignal),
@@ -135,6 +135,7 @@ describe("archivePasswords", () => {
       if (stage === "archive") searchResult({ rows: [{ id: 101 }] });
       fetchMock.mockResolvedValueOnce({
         ok: false,
+        json: async () => null,
         status: 422,
         statusText: "Unprocessable Entity",
       });
@@ -177,7 +178,7 @@ describe("archivePasswords", () => {
       json: jest.fn().mockRejectedValue(new SyntaxError("invalid JSON")),
     });
     await expect(archivePasswords([7], consumer)).rejects.toMatchObject({
-      statusCode: 503,
+      statusCode: 502,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
