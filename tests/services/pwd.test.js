@@ -53,7 +53,7 @@ describe("archivePasswords", () => {
         body: JSON.stringify({
           filters: {
             userId: { value: [7, 8], matchMode: "in" },
-            archived: { value: false, matchMode: "equals" },
+            archived: { value: false, matchMode: "is" },
           },
           select: ["id"],
         }),
@@ -94,6 +94,32 @@ describe("archivePasswords", () => {
     await expect(archivePasswords([7], consumer)).resolves.toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toBe(`${baseUrl}/search`);
+  });
+
+  it("should treat a 404 search (antity empty result) as no active passwords", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      json: async () => null,
+      status: 404,
+      statusText: "Not Found",
+    });
+    await expect(archivePasswords([7], consumer)).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${baseUrl}/search`);
+  });
+
+  it("should still reject a 404 at the archive stage", async () => {
+    searchResult({ rows: [{ id: 101 }] });
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      json: async () => null,
+      status: 404,
+      statusText: "Not Found",
+    });
+    await expect(archivePasswords([7], consumer)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it.each([

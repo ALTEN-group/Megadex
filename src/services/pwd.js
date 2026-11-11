@@ -47,19 +47,26 @@ export async function archivePasswords(userIds, consumer) {
   if (!baseUrl || !isArray(userIds, "!0")) return;
 
   const headers = consumerHeaders(consumer);
-  const { data } = await http.query(
-    "post",
-    `${baseUrl}/search`,
-    undefined,
-    {
-      filters: {
-        userId: { value: userIds, matchMode: "in" },
-        archived: { value: false, matchMode: "equals" },
+  let data;
+  try {
+    ({ data } = await http.query(
+      "post",
+      `${baseUrl}/search`,
+      undefined,
+      {
+        filters: {
+          userId: { value: userIds, matchMode: "in" },
+          archived: { value: false, matchMode: "is" },
+        },
+        select: ["id"],
       },
-      select: ["id"],
-    },
-    headers,
-  );
+      headers,
+    ));
+  } catch (err) {
+    // antity answers an empty search with 404: no active password to archive.
+    if (err?.statusCode === 404) return;
+    throw err;
+  }
 
   if (
     !isArray(data?.rows) ||

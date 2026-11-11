@@ -2,24 +2,15 @@
 import { jest } from "@jest/globals";
 
 const archivePasswords = jest.fn();
-const revokeUserSessions = jest.fn();
 jest.unstable_mockModule("../../../src/services/pwd.js", () => ({
   archivePasswords,
-}));
-jest.unstable_mockModule("../../../src/services/session.js", () => ({
-  revokeUserSessions,
 }));
 const { archivePwd } = await import(
   "../../../src/middlewares/http/archive-pwd.js"
 );
 
-function deferred() {
-  let resolve;
-  const promise = new Promise((done) => {
-    resolve = done;
-  });
-  return { promise, resolve };
-}
+const RETRY =
+  "User profile archived, but authentication cleanup failed. Retry the archive request.";
 
 describe("archivePwd", () => {
   let consumer;
@@ -29,7 +20,6 @@ describe("archivePwd", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     archivePasswords.mockResolvedValue(undefined);
-    revokeUserSessions.mockResolvedValue(undefined);
     consumer = { userId: 1, nickname: "admin" };
     res = { locals: { consumer } };
     next = jest.fn();
@@ -40,14 +30,12 @@ describe("archivePwd", () => {
     [[{ id: 1 }, { id: 7 }]],
     [["1", { id: "7" }, 7, { id: 1 }, "07"]],
   ])(
-    "should normalize and dedupe valid rows %j for both cleanups",
+    "should normalize and dedupe valid rows %j before archiving passwords",
     async (rows) => {
       await archivePwd({ body: { rows } }, res, next);
 
       expect(archivePasswords).toHaveBeenCalledTimes(1);
       expect(archivePasswords).toHaveBeenCalledWith([1, 7], consumer);
-      expect(revokeUserSessions).toHaveBeenCalledTimes(1);
-      expect(revokeUserSessions).toHaveBeenCalledWith([1, 7], consumer);
       expect(next.mock.calls).toEqual([[]]);
     },
   );
@@ -68,83 +56,24 @@ describe("archivePwd", () => {
     await archivePwd({ body }, res, next);
 
     expect(next.mock.calls).toEqual([
-      [
-        {
-          statusCode: 400,
-          message: "Invalid user ids for archive",
-        },
-      ],
+      [{ statusCode: 400, message: "Invalid user ids for archive" }],
     ]);
     expect(archivePasswords).not.toHaveBeenCalled();
-    expect(revokeUserSessions).not.toHaveBeenCalled();
-  });
-
-  it("should start both cleanups and wait for both before continuing", async () => {
-    const passwords = deferred();
-    const sessions = deferred();
-    archivePasswords.mockReturnValue(passwords.promise);
-    revokeUserSessions.mockReturnValue(sessions.promise);
-
-    const pending = archivePwd({ body: { rows: [7] } }, res, next);
-    expect(archivePasswords).toHaveBeenCalledWith([7], consumer);
-    expect(revokeUserSessions).toHaveBeenCalledWith([7], consumer);
-    expect(next).not.toHaveBeenCalled();
-
-    passwords.resolve();
-    await new Promise(setImmediate);
-    expect(next).not.toHaveBeenCalled();
-    sessions.resolve();
-    await pending;
-    expect(next.mock.calls).toEqual([[]]);
   });
 
   it.each([
-    ["passwords", { statusCode: 503 }, 502],
-    ["sessions", { statusCode: 502 }, 502],
-    ["passwords", { statusCode: 504 }, 504],
-    ["sessions", { statusCode: 504 }, 504],
-    ["passwords", new Error("network down"), 502],
+    [{ statusCode: 503 }, 502],
+    [{ statusCode: 404 }, 502],
+    [{ statusCode: 504 }, 504],
+    [new Error("network down"), 502],
   ])(
-    "should wait for remaining cleanup after %s fails and forward %i",
-    async (which, error, statusCode) => {
-      const remaining = deferred();
-      const failing =
-        which === "passwords" ? archivePasswords : revokeUserSessions;
-      const other =
-        which === "passwords" ? revokeUserSessions : archivePasswords;
-      failing.mockRejectedValue(error);
-      other.mockReturnValue(remaining.promise);
+    "should forward retry guidance when password cleanup fails with %j",
+    async (error, statusCode) => {
+      archivePasswords.mockRejectedValue(error);
 
-      const pending = archivePwd({ body: { rows: [7] } }, res, next);
-      await new Promise(setImmediate);
-      expect(other).toHaveBeenCalledWith([7], consumer);
-      expect(next).not.toHaveBeenCalled();
-      remaining.resolve();
-      await pending;
+      await archivePwd({ body: { rows: [7] } }, res, next);
 
-      expect(next.mock.calls).toEqual([
-        [
-          {
-            statusCode,
-            message:
-              "User profile archived, but authentication cleanup failed. Retry the archive request.",
-          },
-        ],
-      ]);
+      expect(next.mock.calls).toEqual([[{ statusCode, message: RETRY }]]);
     },
   );
-
-  it("should forward one retry error when both cleanups fail", async () => {
-    archivePasswords.mockRejectedValue({ statusCode: 504 });
-    revokeUserSessions.mockRejectedValue({ statusCode: 502 });
-
-    await archivePwd({ body: { rows: [7] } }, res, next);
-
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(next).toHaveBeenCalledWith({
-      statusCode: 504,
-      message:
-        "User profile archived, but authentication cleanup failed. Retry the archive request.",
-    });
-  });
 });

@@ -2,12 +2,14 @@
 
 ## Unreleased
 
-- Upgrade `@dwtechs/antity-pgsql` to 0.26.0 and use native restore for users and social networks. Add permission-controlled social restoration in Gatelin and the admin, with catalog cache invalidation. Restore uses the library's audited update even for already-active rows; passwords and sessions remain archived.
+- Upgrade `@dwtechs/antity-pgsql` to 0.26.0 and use native restore for users and social networks. Add permission-controlled social restoration in Gatelin and the admin, with catalog cache invalidation. Restore uses the library's audited update even for already-active rows; passwords remain archived; an unexpired Gatelin refresh token works again after restoration.
 
 - Fix user archive propagation for bare ids and Foxnox's `rows` payload; report incomplete authentication cleanup instead of silently ignoring Gatelin failures. Retrying the archive request completes remaining cleanup.
+- Stop revoking Gatelin sessions from Megadex (`CONSUMER_URL` removed): Gatelin rejected these unauthenticated calls with `401`, which made every archive fail with `502`. Archived, deactivated or re-roled users keep access until their access token expires, since Gatelin refuses to refresh it.
+- Fix Foxnox password cleanup on archive: filter `archived` with `matchMode: "is"` (Foxnox ignored `equals` on booleans) and treat a `404` empty search as no password to archive.
 - Prevent users from archiving their own account, including in mixed batches.
 - Register authenticated profile lookup in Gatelin.
-- Add permission-controlled restoration of archived user profiles in the admin CRUD and API. Passwords and previous sessions remain archived.
+- Add permission-controlled restoration of archived user profiles in the admin CRUD and API. Passwords remain archived.
 
 # 0.1.0-alpha.1 (Nov 9th 2026)
 

@@ -149,7 +149,7 @@ for (const resource of RESOURCES) {
   );
 }
 
-// archivePwd calls Foxnox/Gatelin when their URLs are set; these tests only check routing.
+// archivePwd calls Foxnox when its URL is set; these tests only check routing.
 jest.unstable_mockModule(
   path.join(__dirname, "../../src/middlewares/http/archive-pwd.js"),
   () => ({ archivePwd: jest.fn((_req, _res, next) => next()) }),

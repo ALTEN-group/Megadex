@@ -321,3 +321,32 @@ describe("POST /megadex/users/restore", () => {
     expectError(res, 500, "Postgre error: Restore database unavailable");
   });
 });
+
+// Gatelin's refresh lookup (filterByIdAndActiveNotArchived) relies on this
+// filter: with session revocation removed, it is what ends archived sessions.
+describe("POST /megadex/users/search (Gatelin refresh lookup)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    execute.mockResolvedValue({ rows: [], rowCount: 0 });
+  });
+
+  it("should apply Gatelin's active/archived IS filters in SQL", async () => {
+    const res = await request(app)
+      .post("/megadex/users/search")
+      .send({
+        filters: {
+          id: { value: 9, matchMode: "=" },
+          active: { value: true, matchMode: "IS" },
+          archived: { value: false, matchMode: "IS" },
+        },
+      });
+
+    expect(res.status).toBe(404);
+    expect(execute).toHaveBeenCalledTimes(1);
+    const [query, args] = execute.mock.calls[0];
+    expect(query).toMatch(
+      /\bFROM public\.users WHERE id = \$1 AND active IS TRUE AND archived IS FALSE$/,
+    );
+    expect(args).toEqual([9]);
+  });
+});

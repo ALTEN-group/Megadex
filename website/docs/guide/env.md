@@ -27,8 +27,7 @@ Configuration reference for the `megadex` API container and the `megadex-migrati
 | `ENV_NAME` | — | Environment name (`local`, `staging`, `prod`) |
 | `SERVICE_NAME` | — | Service identifier used in structured logs |
 | `PWD_CREATE_URL` | — | Optional Foxnox credential-provisioning endpoint (`http://<foxnox-host>:3000/foxnox/pwd`). When set, `POST /megadex/users` provisions a password entry in Foxnox for each created user, and `POST /megadex/users/archive` archives their Foxnox password entry. |
-| `CONSUMER_URL` | — | Optional Gatelin consumer sessions endpoint (`http://<gatelin-host>:3000/gatelin/consumers`). When set, archiving a user, deactivating a user (`active = false`), or modifying their `roles` immediately revokes their active Gatelin sessions. |
-| `UPSTREAM_TIMEOUT_MS` | `30000` | Timeout in milliseconds for outbound HTTP requests to `PWD_CREATE_URL` and `CONSUMER_URL` |
+| `UPSTREAM_TIMEOUT_MS` | `30000` | Timeout in milliseconds for outbound HTTP requests to `PWD_CREATE_URL` |
 
 ## Bundled Admin UI (`megadex` API & Admin container)
 
@@ -68,4 +67,3 @@ When pairing Megadex with [Gatelin](https://gatelin.fr) and [Foxnox](https://fox
 | **Gatelin** | `USER_SEARCH_URL` | `http://<megadex-host>:3000/megadex/users/search` |
 | **Foxnox** | `USER_SEARCH_URL` | `http://<megadex-host>:3000/megadex/users/search` |
 | **Megadex** | `PWD_CREATE_URL` | `http://<foxnox-host>:3000/foxnox/pwd` |
-| **Megadex** | `CONSUMER_URL` | `http://<gatelin-host>:3000/gatelin/consumers` |

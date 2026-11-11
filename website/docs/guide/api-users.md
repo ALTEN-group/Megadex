@@ -178,18 +178,20 @@ x-consumer-name: admin
 
 A consumer cannot archive their own account: a batch containing the caller's id is rejected with `403` and nothing is archived.
 
-Rows accept bare ids or `{ "id": n }` objects. When `PWD_CREATE_URL` and
-`CONSUMER_URL` are configured, archiving also archives active Foxnox passwords
-and revokes every active Gatelin session. Foxnox invalidates outstanding recovery
+Rows accept bare ids or `{ "id": n }` objects. When `PWD_CREATE_URL` is
+configured, archiving also archives active Foxnox passwords. Megadex does not
+revoke Gatelin sessions: Gatelin refuses to refresh tokens for archived or
+inactive users, so an open session ends when its access token expires
+(`ACCESS_TOKEN_DURATION` in Gatelin). The same applies to deactivation and role
+changes on `PUT /megadex/users`. Foxnox invalidates outstanding recovery
 links, login challenges, and login-resume tickets before archiving passwords
 (requires the corresponding Foxnox archive update).
 
 Cross-service cleanup is not a distributed transaction: the profile is already
 archived when cleanup starts. An upstream failure returns `502` (`504` for a
-timeout), with a message asking the caller to retry the archive request. Both
-services are attempted even if one fails. Repeating the same request retries
-remaining cleanup without restoring the profile or previous sessions.
-Missing service URLs retain standalone behavior and skip the corresponding
+timeout), with a message asking the caller to retry the archive request.
+Repeating the same request retries remaining cleanup without restoring the
+profile. A missing `PWD_CREATE_URL` retains standalone behavior and skips the
 integration.
 
 ## Restore Users
@@ -215,7 +217,9 @@ x-consumer-name: admin
 | `403` | Rows outside the caller's ACL conditions |
 
 Foxnox passwords stay archived until the user completes a separate password reset;
-previous sessions stay revoked. Restoration does not send an email automatically:
+previous Gatelin sessions are not revoked, so a refresh token that has not yet
+expired (Gatelin `REFRESH_TOKEN_DURATION`) works again once the profile is
+restored. Restoration does not send an email automatically:
 the user selects **Forgot password** on the login page to request a recovery link.
 Completing recovery for an active restored profile replaces the newest archived
 password's hash before unarchiving that credential, preserves its 2FA enrollment,

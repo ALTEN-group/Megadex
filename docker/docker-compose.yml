@@ -361,7 +361,6 @@ services:
       SERVER_SCHEME: ${SERVER_SCHEME}
       SERVICE_NAME: ${MEGADEX_HOST}
       PWD_CREATE_URL: ${MEGADEX_PWD_CREATE_URL:-}
-      CONSUMER_URL: ${MEGADEX_CONSUMER_URL:-}
       ADMIN_ROLES_SEARCH_URL: ${ADMIN_ROLES_SEARCH_URL:-/api/gatelin/roles/search}
     networks:
       - internal
