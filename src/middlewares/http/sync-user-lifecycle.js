@@ -25,8 +25,12 @@ export async function syncUserLifecycle(req, res, next) {
     .filter((id) => isInteger(id, false))
     .map(Number);
 
-  if (affectedUserIds.length) {
-    await revokeUserSessions(affectedUserIds, res.locals.consumer);
+  try {
+    if (affectedUserIds.length) {
+      await revokeUserSessions(affectedUserIds, res.locals.consumer);
+    }
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 }

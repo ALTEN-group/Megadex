@@ -1,5 +1,5 @@
 // @ts-check
-import { isArray, isInteger } from "@dwtechs/checkard";
+import { isArray, isValidInteger } from "@dwtechs/checkard";
 import { log } from "@dwtechs/winstan";
 
 const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS) || 30000;
@@ -44,32 +44,64 @@ export async function revokeUserSessions(userIds, consumer) {
       log.error(
         `Gatelin consumer search returned ${searchRes.status}: ${searchRes.statusText}`,
       );
-      return;
+      throw Object.assign(
+        new Error("HTTP(502): Gatelin consumer search failed"),
+        {
+          statusCode: 502,
+        },
+      );
     }
 
-    const data = await searchRes.json().catch(() => null);
-    const consumerIds = (isArray(data?.rows) ? data.rows : [])
-      .map((r) => r?.id)
-      .filter((id) => isInteger(id, false))
-      .map(Number);
+    const data = await searchRes.json();
+    if (
+      !isArray(data?.rows) ||
+      data.rows.some((row) => !isValidInteger(row?.id, 1, undefined, false))
+    )
+      throw Object.assign(
+        new Error("HTTP(502): Invalid consumer search response"),
+        {
+          statusCode: 502,
+        },
+      );
+    const consumerIds = [...new Set(data.rows.map((row) => Number(row.id)))];
 
-    for (const id of consumerIds) {
-      const archiveRes = await fetch(`${baseUrl}/archive`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          rows: [{ id }],
-        }),
-        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-      });
+    const results = await Promise.allSettled(
+      consumerIds.map(async (id) => {
+        const archiveRes = await fetch(`${baseUrl}/archive`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            rows: [{ id }],
+          }),
+          signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+        });
 
-      if (!archiveRes.ok) {
-        log.error(
-          `Gatelin consumer archive returned ${archiveRes.status} for id=${id}`,
-        );
-      }
-    }
+        if (!archiveRes.ok) {
+          log.error(
+            `Gatelin consumer archive returned ${archiveRes.status} for id=${id}`,
+          );
+          throw Object.assign(
+            new Error("HTTP(502): Gatelin consumer archive failed"),
+            {
+              statusCode: 502,
+            },
+          );
+        }
+      }),
+    );
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure) throw failure.reason;
   } catch (err) {
     log.error(`Gatelin session revocation failed: ${err?.message || err}`);
+    if (err?.statusCode) throw err;
+    const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
+    throw Object.assign(
+      new Error(
+        timedOut
+          ? "HTTP(504): Upstream timeout"
+          : "HTTP(503): Service Unavailable",
+      ),
+      { statusCode: timedOut ? 504 : 503 },
+    );
   }
 }

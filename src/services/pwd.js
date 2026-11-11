@@ -1,5 +1,5 @@
 // @ts-check
-import { isArray } from "@dwtechs/checkard";
+import { isArray, isValidInteger } from "@dwtechs/checkard";
 import { log } from "@dwtechs/winstan";
 
 const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS) || 30000;
@@ -82,8 +82,6 @@ export async function archivePasswords(userIds, consumer) {
       method: "POST",
       headers: consumerHeaders(consumer),
       body: JSON.stringify({
-        first: 0,
-        rows: 1000,
         filters: {
           userId: { value: userIds, matchMode: "in" },
           archived: { value: false, matchMode: "equals" },
@@ -105,16 +103,26 @@ export async function archivePasswords(userIds, consumer) {
     }
 
     const body = await searchRes.json();
-    const pwdIds = (body?.rows || [])
-      .map((r) => Number(r?.id))
-      .filter((id) => Number.isInteger(id) && id > 0);
+    if (
+      !isArray(body?.rows) ||
+      body.rows.some((row) => !isValidInteger(row?.id, 1, undefined, false))
+    ) {
+      log.error("PWD_CREATE_URL/search returned invalid password rows");
+      throw Object.assign(
+        new Error("HTTP(502): Invalid password search response"),
+        {
+          statusCode: 502,
+        },
+      );
+    }
+    const pwdIds = [...new Set(body.rows.map((row) => Number(row.id)))];
 
     if (!pwdIds.length) return;
 
     const archiveRes = await fetch(`${baseUrl}/archive`, {
       method: "POST",
       headers: consumerHeaders(consumer),
-      body: JSON.stringify({ ids: pwdIds }),
+      body: JSON.stringify({ rows: pwdIds.map((id) => ({ id })) }),
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 

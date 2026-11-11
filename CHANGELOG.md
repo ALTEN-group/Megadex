@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix user archive propagation for bare ids and Foxnox's `rows` payload; report incomplete authentication cleanup instead of silently ignoring Gatelin failures. Retrying the archive request completes remaining cleanup.
 - Prevent users from archiving their own account, including in mixed batches.
 - Register authenticated profile lookup in Gatelin.
 - Add permission-controlled restoration of archived user profiles in the admin CRUD and API. Passwords and previous sessions remain archived.

@@ -178,6 +178,20 @@ x-consumer-name: admin
 
 A consumer cannot archive their own account: a batch containing the caller's id is rejected with `403` and nothing is archived.
 
+Rows accept bare ids or `{ "id": n }` objects. When `PWD_CREATE_URL` and
+`CONSUMER_URL` are configured, archiving also archives active Foxnox passwords
+and revokes every active Gatelin session. Foxnox invalidates outstanding recovery
+links, login challenges, and login-resume tickets before archiving passwords
+(requires the corresponding Foxnox archive update).
+
+Cross-service cleanup is not a distributed transaction: the profile is already
+archived when cleanup starts. An upstream failure returns `502` (`504` for a
+timeout), with a message asking the caller to retry the archive request. Both
+services are attempted even if one fails. Repeating the same request retries
+remaining cleanup without restoring the profile or previous sessions.
+Missing service URLs retain standalone behavior and skip the corresponding
+integration.
+
 ## Restore Users
 
 Restores archived user profiles (`archived = false`, `archivedAt = NULL`), preserving their `active` state. Rows accept bare ids or `{ "id": n }` objects; rows that are not archived are left unchanged. Gatelin grants this route to Super admin and Admin; the admin UI exposes it from the Users CRUD dialog or a table selection.
