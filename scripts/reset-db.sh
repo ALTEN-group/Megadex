@@ -20,9 +20,10 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-# Load container names from .env.dev (same approach as setup-mocks.sh).
+# Load only naming variables; other dotenv values are not shell assignments.
 ENV_TMP=$(mktemp)
-grep -v '^#' "$ENV_FILE" | grep -v '^UID=' > "$ENV_TMP"
+trap 'rm -f "$ENV_TMP"' EXIT
+grep -E '^(APP_NAME|ENV_NAME|POSTGRES_HOST|MEGADEX_HOST|GATELIN_HOST|FOXNOX_HOST|(MEGADEX|GATELIN|FOXNOX)_MIGRATION_(SERVICE_NAME|HOST))=' "$ENV_FILE" > "$ENV_TMP"
 set -a
 # shellcheck disable=SC1090
 source "$ENV_TMP"

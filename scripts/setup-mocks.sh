@@ -50,9 +50,10 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-# Load container names + postgres credentials from .env.dev.
+# Load only naming and seeding variables; unrelated dotenv values are not shell syntax.
 ENV_TMP=$(mktemp)
-grep -v '^#' "$ENV_FILE" | grep -v '^UID=' > "$ENV_TMP"
+trap 'rm -f "$ENV_TMP"' EXIT
+grep -E '^(APP_NAME|ENV_NAME|FOXNOX_HOST|POSTGRES_HOST|POSTGRES_ROOT_USER|POSTGRES_ROOT_PWD|FOXNOX_DB_NAME|MEGADEX_DB_NAME|DEFAULT_PORT|SWAGGER_HOST)=' "$ENV_FILE" > "$ENV_TMP"
 set -a
 # shellcheck disable=SC1090
 source "$ENV_TMP"
