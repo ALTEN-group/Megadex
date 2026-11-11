@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Upgrade `@dwtechs/antity-pgsql` to 0.26.0 and use native restore for users and social networks. Add permission-controlled social restoration in Gatelin and the admin, with catalog cache invalidation. Restore uses the library's audited update even for already-active rows; passwords and sessions remain archived.
+
 - Fix user archive propagation for bare ids and Foxnox's `rows` payload; report incomplete authentication cleanup instead of silently ignoring Gatelin failures. Retrying the archive request completes remaining cleanup.
 - Prevent users from archiving their own account, including in mixed batches.
 - Register authenticated profile lookup in Gatelin.

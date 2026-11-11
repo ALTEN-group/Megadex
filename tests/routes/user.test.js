@@ -3,9 +3,17 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 
-// Keep the real SQLEntity schemas/query builder; replace only the DB boundary.
-const antity = await import("@dwtechs/antity-pgsql");
+// Keep the real SQLEntity schemas/query builder; route both Antity's internal
+// pg-pool calls and ACL's exported execute through the same DB stub.
 const execute = jest.fn();
+jest.unstable_mockModule("pg-pool", () => ({
+  default: class {
+    query(...args) {
+      return execute(...args);
+    }
+  },
+}));
+const antity = await import("@dwtechs/antity-pgsql");
 jest.unstable_mockModule("@dwtechs/antity-pgsql", () => ({
   ...antity,
   execute,
@@ -19,8 +27,6 @@ const CONSUMER = {
   "x-consumer-name": "restore-admin",
 };
 const CONDITIONS = JSON.stringify([{ field: "active", op: "=", value: true }]);
-const RESTORE_SQL =
-  'UPDATE users SET archived = false, "updaterId" = $2, "updaterName" = $3 WHERE id = ANY($1::int[]) AND archived = true';
 
 function expectSuccess(res) {
   expect(res.status).toBe(200);
@@ -36,12 +42,17 @@ function expectError(res, status, message) {
 }
 
 function expectRestoreCall(index, ids) {
-  const [query, args, client] = execute.mock.calls[index];
-  // Exact assignments prevent payload/ACL fields from becoming extra updates.
-  expect(query.replace(/\s+/g, " ").trim()).toBe(RESTORE_SQL);
+  const [query, args] = execute.mock.calls[index];
+  const placeholders = ids.map((_, i) => `$${i + 1}`).join(", ");
+  const auditIdParam = ids.length + 1;
+  const auditNameParam = ids.length + 2;
+  // Native restore audits every requested row, even if it is already active.
+  // Exact SQL prevents caller-supplied fields from becoming extra assignments.
+  expect(query.replace(/\s+/g, " ").trim()).toBe(
+    `UPDATE public.users SET archived = false, "updaterId" = $${auditIdParam}, "updaterName" = $${auditNameParam} WHERE id IN (${placeholders})`,
+  );
   expect(query).not.toMatch(/\bactive\b/);
-  expect(args).toEqual([ids, 42, "restore-admin"]);
-  expect(client).toBeNull();
+  expect(args).toEqual([...ids, 42, "restore-admin"]);
 }
 
 function expectAclSearch(ids) {
@@ -95,7 +106,7 @@ describe("POST /megadex/users/restore", () => {
     expectRestoreCall(0, [8, 7]);
   });
 
-  it("should return an empty success for an idempotent restore with no matching archived rows", async () => {
+  it("should still audit the native update when requested rows are already active", async () => {
     const res = await request(app)
       .post(ENDPOINT)
       .set(CONSUMER)
@@ -148,7 +159,7 @@ describe("POST /megadex/users/restore", () => {
       .set(CONSUMER)
       .send({ rows: [7, invalid, { id: 8 }] });
 
-    expectError(res, 400, "Invalid user id for restore");
+    expectError(res, 400, "Invalid row id for restore");
     expect(execute).not.toHaveBeenCalled();
   });
 
@@ -278,7 +289,7 @@ describe("POST /megadex/users/restore", () => {
     expectAclSearch([7]);
   });
 
-  it("should preserve a boundary error's explicit 500 status", async () => {
+  it("should preserve a boundary error's explicit 500 status and Postgre prefix", async () => {
     execute.mockRejectedValueOnce(
       Object.assign(new Error("Restore database unavailable"), {
         statusCode: 500,
@@ -289,21 +300,24 @@ describe("POST /megadex/users/restore", () => {
       .set(CONSUMER)
       .send({ rows: [7] });
 
-    expectError(res, 500, "Restore database unavailable");
+    expectError(res, 500, "Postgre error: Restore database unavailable");
     expect(execute).toHaveBeenCalledTimes(1);
     expectRestoreCall(0, [7]);
   });
 
-  it("should forward an untagged restore database error using errandler's default 400", async () => {
-    execute.mockRejectedValueOnce(new Error("Restore database unavailable"));
+  it("should return the Postgre-prefixed boundary error with its explicit 500 status", async () => {
+    execute.mockRejectedValueOnce(
+      Object.assign(new Error("Restore database unavailable"), {
+        statusCode: 500,
+      }),
+    );
     const res = await request(app)
       .post(ENDPOINT)
       .set(CONSUMER)
       .send({ rows: [7] });
-
     expect(execute).toHaveBeenCalledTimes(1);
     expectRestoreCall(0, [7]);
-    // Repository contract: next(error) preserves the message; no status defaults to 400.
-    expectError(res, 400, "Restore database unavailable");
+    expectRestoreCall(0, [7]);
+    expectError(res, 500, "Postgre error: Restore database unavailable");
   });
 });

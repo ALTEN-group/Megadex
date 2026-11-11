@@ -11,7 +11,7 @@ import {
 import { archivePwd } from "../middlewares/http/archive-pwd.js";
 import { createPwd } from "../middlewares/http/create-pwd.js";
 import { syncUserLifecycle } from "../middlewares/http/sync-user-lifecycle.js";
-import { restoreUsers } from "../middlewares/mappers/restore-users.js";
+import { prepareRestoreRows } from "../middlewares/mappers/restore-rows.js";
 import schema from "../middlewares/schema.js";
 import {
   mapUserRoles,
@@ -187,7 +187,8 @@ router.post(
   "/restore",
   requireConsumer,
   enforceAcl(userEnt, "existing"),
-  restoreUsers,
+  prepareRestoreRows,
+  userEnt.restore,
 );
 router.get(
   "/schema",

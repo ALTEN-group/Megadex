@@ -12,6 +12,7 @@
 --   98=searchCountries  99=getCountrySchema  100=searchCivilities 101=getCivilitySchema
 --   102=searchGenders   103=getGenderSchema  104=searchAudit  105=updateOwnProfile
 --   106=getOwnProfile   107=restoreUsers
+--   108=restoreSocials
 -- Keep admin/src/app/core/app-config/app.acls.ts in sync with this order.
 --
 
@@ -57,5 +58,6 @@ INSERT INTO routes ("resourceId", pattern, name, description, protected, core, "
   -- self-service profile update (/megadex/users/me; appended at the end so existing route IDs stay stable)
   ((SELECT id FROM resource WHERE name = 'megadex/users'), '/me', 'updateOwnProfile', 'Update authenticated user profile', true, false, ARRAY[5], ARRAY[3], -1, 'system'),
   ((SELECT id FROM resource WHERE name = 'megadex/users'), '/me', 'getOwnProfile', 'Get authenticated user profile', true, false, ARRAY[2], ARRAY[1], -1, 'system'),
-  ((SELECT id FROM resource WHERE name = 'megadex/users'), '/restore', 'restoreUsers', 'Restore archived user profiles', true, false, ARRAY[5], ARRAY[2], -1, 'system')
+  ((SELECT id FROM resource WHERE name = 'megadex/users'), '/restore', 'restoreUsers', 'Restore archived user profiles', true, false, ARRAY[5], ARRAY[2], -1, 'system'),
+  ((SELECT id FROM resource WHERE name = 'megadex/socials'), '/restore', 'restoreSocials', 'Restore archived social networks', true, false, ARRAY[5], ARRAY[2], -1, 'system')
 ON CONFLICT DO NOTHING;
