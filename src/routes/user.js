@@ -10,6 +10,7 @@ import {
 import { archivePwd } from "../middlewares/http/archive-pwd.js";
 import { createPwd } from "../middlewares/http/create-pwd.js";
 import { syncUserLifecycle } from "../middlewares/http/sync-user-lifecycle.js";
+import { assertSuperAdminCeiling } from "../middlewares/mappers/user/assertSuperAdminCeiling.js";
 import schema from "../middlewares/schema.js";
 import {
   mapUserRoles,
@@ -136,6 +137,7 @@ router.post(
   requireConsumer,
   enforceAcl(userEnt, "insert"),
   rolesToDatabase,
+  assertSuperAdminCeiling,
   userEnt.addArraySubstack,
   rolesToApi,
   createPwd,
@@ -145,6 +147,7 @@ router.put(
   requireConsumer,
   enforceAcl(userEnt, "existing"),
   rolesToDatabase,
+  assertSuperAdminCeiling,
   userEnt.updateArraySubstack,
   rolesToApi,
   syncUserLifecycle,
@@ -153,6 +156,7 @@ router.post(
   "/archive",
   requireConsumer,
   enforceAcl(userEnt, "existing"),
+  assertSuperAdminCeiling,
   userEnt.archive,
   archivePwd,
 );

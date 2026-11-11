@@ -27,7 +27,7 @@ WHERE s.name = 'megadex'
       AND p."operationId" = ro."operationId"
   );
 
--- Self-service profile update (/megadex/users/me) is available to every non-archived role.
+-- Self-service profile endpoints (/megadex/users/me) are available to every non-archived role.
 INSERT INTO permissions ("roleId", "routeId", "operationId", fields, "conditionId", "creatorId", "creatorName")
 SELECT
   rl.id,
@@ -40,7 +40,7 @@ SELECT
 FROM route r
 JOIN route_operation ro ON ro."routeId" = r.id
 JOIN role rl ON rl.archived = false
-WHERE r.name = 'updateOwnProfile'
+WHERE r.name IN ('updateOwnProfile', 'getBasicUserInfo')
   AND NOT EXISTS (
     SELECT 1
     FROM permission p

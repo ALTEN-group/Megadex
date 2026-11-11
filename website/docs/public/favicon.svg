@@ -1,5 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#18202c"/>
-  <circle cx="32" cy="24" r="10" fill="#e06a2b"/>
-  <path d="M14 52c0-10 8-18 18-18s18 8 18 18" fill="#e06a2b"/>
+<!-- Megadex favicon: stylised M knocked out of the brand gradient tile. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="megadexTile" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#818CF8" />
+      <stop offset="100%" stop-color="#4338CA" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#megadexTile)" />
+  <!--
+    The M is the logo path (73x100 viewBox) scaled to 42px tall and centred.
+    Solid white rather than the gradient: at 16px the tile carries the brand
+    colour and the glyph needs maximum contrast to stay legible.
+  -->
+  <g transform="translate(16.88 11) scale(0.42)">
+    <path d="M 0 100 L 0 0 L 18 0 L 36 36 L 54 0 L 72 0 L 72 100
+             L 54 100 L 54 38 L 36 72 L 18 38 L 18 100 Z"
+          fill="#fff" />
+  </g>
 </svg>

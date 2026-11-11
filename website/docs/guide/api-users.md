@@ -1,16 +1,17 @@
-# Users API
+# Users
 
 The `users` resource manages user profiles, aggregated role assignments (`roles`), and social network handles (`socialsJsonAgg`) through the writable `users` PostgreSQL view.
 
-All endpoints are mounted under `/megadex/users` (and typically exposed by the BFF under `/api/megadex/users`).
+Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`; a custom BFF may use another public prefix.
 
 ## Search Users
 
-Queries the `users` view with optional pagination, sorting, and field filters. This endpoint is also called internally by the BFF (`USER_SEARCH_URL`) and Foxnox to resolve an email address to a `userId` and role list during login or recovery.
+Queries the `users` view with optional pagination, sorting, and field filters. This endpoint is also called internally by the BFF (`USER_SEARCH_URL`) and Foxnox to resolve an email address to a `userId` and role list during login or account recovery. When called without `x-consumer-*` headers, Megadex automatically defaults `filters.archived` to `false`.
 
-```http
+```
 POST /megadex/users/search
 Content-Type: application/json
+Authorization: Bearer <access_token>
 
 {
   "pagination": true,
@@ -24,7 +25,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (`200 OK`):**
+**Response (200 OK):**
 
 ```json
 {
@@ -71,39 +72,48 @@ Content-Type: application/json
 }
 ```
 
-## Get Current User Profile (`/me`)
+## Get Current User (`/me`)
 
-Returns the authenticated caller's essential identity and roles, resolved from the `x-consumer-user-id` header injected by the BFF. Archived users return `404`.
+Returns the authenticated caller's profile, roles, and social handles, resolved from the `x-consumer-user-id` header injected by the BFF. Archived users return **404**.
 
-```http
+```
 GET /megadex/users/me
-x-consumer-user-id: 2
-x-consumer-name: jdoe
+Authorization: Bearer <access_token>
 ```
 
-**Response (`200 OK`):**
+**Response (200 OK):** the single user object (including `roles` and `socialsJsonAgg`).
 
-```json
+## Update Current User (`/me`)
+
+Updates the authenticated caller's own profile fields and social handles. Megadex pins `id` to the caller's `userId` and rejects privilege-escalation or identity-anchor fields (`roles`, `rolesArrayAgg`, `active`, `archived`, `email`) with **403 Forbidden**.
+
+```
+PUT /megadex/users/me
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
 {
-  "id": 2,
   "firstName": "John",
   "lastName": "Doe",
-  "nickname": "jdoe",
-  "email": "john.doe@example.com",
-  "active": true,
-  "roles": [1, 2]
+  "phone": "+33123456789",
+  "socialsJsonAgg": {
+    "GitHub": "jdoe"
+  }
 }
 ```
+
+**Response (200 OK):** `{ "rows": [updatedUser] }`.
 
 ## Create Users
 
 Creates one or more users along with their `roles` and `socialsJsonAgg` handles in a single transaction via the `iud_user` `INSTEAD OF INSERT` trigger.
 
-```http
+When `PWD_CREATE_URL` is configured, Megadex also provisions a password row in Foxnox for each created user (and soft-archives the new user row if provisioning fails). Assigning role `1` (**Super admin**) requires the caller to hold role `1` (`assertSuperAdminCeiling`).
+
+```
 POST /megadex/users
 Content-Type: application/json
-x-consumer-user-id: 2
-x-consumer-name: admin
+Authorization: Bearer <access_token>
 
 {
   "rows": [
@@ -123,7 +133,7 @@ x-consumer-name: admin
 }
 ```
 
-### Required Fields on `POST`
+### Required fields on `POST`
 
 | Field | Type | Constraints |
 |---|---|---|
@@ -136,11 +146,12 @@ x-consumer-name: admin
 
 Updates one or more users by `id`. Sending `roles` replaces the user's `user_role` rows; sending `socialsJsonAgg` reconciles the user's `user_social` handles (setting a key to `null` or `""` removes that social handle; omitting `socialsJsonAgg` leaves existing handles unchanged).
 
-```http
+When `CONSUMER_URL` is configured, deactivating a user (`active: false`) or modifying their `roles` immediately revokes their cached BFF sessions. Modifying a user who holds role `1` or assigning role `1` requires the caller to hold role `1`.
+
+```
 PUT /megadex/users
 Content-Type: application/json
-x-consumer-user-id: 2
-x-consumer-name: admin
+Authorization: Bearer <access_token>
 
 {
   "rows": [
@@ -157,15 +168,23 @@ x-consumer-name: admin
 }
 ```
 
+**Response (200 OK):** the updated rows.
+
+## Get User History
+
+```
+GET /megadex/users/:id/history
+Authorization: Bearer <access_token>
+```
+
+Returns the combined audit trail for user `:id` across `"user"`, `user_role`, and `user_social`, built from database triggers that record every change into `log.history`. History older than six months is purged nightly.
+
 ## Archive Users
 
-Soft-deletes one or more users (`archived = true`, `archivedAt = NOW()`). Archived users are excluded from `/me` and purged after 2 months by the nightly cleanup job.
-
-```http
+```
 POST /megadex/users/archive
 Content-Type: application/json
-x-consumer-user-id: 2
-x-consumer-name: admin
+Authorization: Bearer <access_token>
 
 {
   "rows": [
@@ -174,20 +193,13 @@ x-consumer-name: admin
 }
 ```
 
-**Response:** `204 No Content`
+**Response (204 No Content):** rows are soft-deleted — flagged `archived` with an `archivedAt` timestamp rather than removed. When `PWD_CREATE_URL` and `CONSUMER_URL` are set, Megadex also archives their Foxnox password rows and revokes their active Gatelin sessions. The nightly cleanup job deletes archived rows for good after two months.
 
-## Get User History
+## Get Entity Schema
 
-Returns the combined change history for user `:id` across `"user"`, `user_role`, and `user_social`.
-
-```http
-GET /megadex/users/2/history
 ```
-
-## Get User Schema
-
-Returns the field descriptors for the `users` entity (with `rolesArrayAgg` mapped to `roles` for API consumers).
-
-```http
 GET /megadex/users/schema
+Authorization: Bearer <access_token>
 ```
+
+Returns the field definitions — types, minimums and maximums, which operations each field participates in, and which are required (with `rolesArrayAgg` mapped to `roles`). The admin UI uses this to build its forms, so it never drifts out of sync with the backend.

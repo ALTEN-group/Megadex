@@ -1,19 +1,33 @@
-# Contributing to the Documentation
+# Contributing to Megadex
 
-## Local Development
+## Documentation Website
 
-```bash
+The documentation site lives in `website/` and is built with [VitePress](https://vitepress.dev/). Content files are Markdown documents under `website/docs/guide/`. The sidebar and navigation are configured in `website/docs/.vitepress/config.mjs`.
+
+### Start the dev server
+
+```sh
+./scripts/start-dev.sh
+```
+
+This starts all services including the `website` container. The VitePress dev server runs inside the container with the `website/docs/` folder mounted as a live volume, so any change to a `.md` file or to `config.mjs` is reflected immediately. The site is available via the Traefik proxy at `http://localhost:8100/docs/`.
+
+To run it outside Docker instead:
+
+```sh
 cd website
 npm install
 npm run dev
 ```
 
-Or via Docker Compose (`scripts/start-dev.sh`): available at `http://localhost:8100/docs/`.
+Production docs are built and published by `.github/workflows/deploy-docs.yml` to GitHub Pages. There is no documentation Docker image.
 
-## Recording Admin UI Demo Clips
+### Adding or editing pages
 
-The home page embeds short `<video>` loops of the Angular admin UI located in
-`docs/public/videos/`. They are recorded deterministically from the live dev
-stack using Playwright + ffmpeg in `admin/demos/` — see
-[`admin/README.md`](../admin/README.md#recording-website-demos) for the command
-and how to add a new clip.
+| Task | What to do |
+|---|---|
+| Edit an existing page | Edit the corresponding `.md` file in `website/docs/guide/` |
+| Add a new page | Create a `.md` file and register it in the `sidebar` array in `website/docs/.vitepress/config.mjs` |
+| Change top-level navigation | Edit the `nav` array in `config.mjs` |
+| Change the site title or description | Edit the `title` / `description` fields in `config.mjs` |
+| Replace the logo or favicon | Edit `website/docs/public/logo.svg` / `favicon.svg` |

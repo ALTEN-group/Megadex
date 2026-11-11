@@ -1,6 +1,6 @@
-# Reference Lookups API
+# Reference Lookups
 
-Megadex provides three read-only localized reference catalogs backed by PostgreSQL enum/code tables and translation tables (`country_trans`, `civility_trans`, `gender_trans`):
+Megadex provides three read-only localized reference catalogs backed by PostgreSQL domains and translation tables (`country_trans`, `civility_trans`, `gender_trans`):
 
 - `/megadex/countries`
 - `/megadex/civilities`
@@ -8,13 +8,16 @@ Megadex provides three read-only localized reference catalogs backed by PostgreS
 
 Each lookup exposes `POST /search` and `GET /schema` and is seeded in English (`en`) and French (`fr`).
 
-## Countries (`/megadex/countries`)
+Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`.
+
+## Countries
 
 Returns ISO country codes along with localized country names (`trans`) and nationalities (`nationality`).
 
-```http
+```
 POST /megadex/countries/search
 Content-Type: application/json
+Authorization: Bearer <access_token>
 
 {
   "filters": {
@@ -25,34 +28,35 @@ Content-Type: application/json
 }
 ```
 
-**Response (`200 OK`):**
+**Response (200 OK):**
 
 ```json
 {
   "rows": [
     {
-      "code": "FR",
-      "lang": "fr",
-      "trans": "France",
-      "nationality": "Française"
-    },
-    {
       "code": "DE",
       "lang": "fr",
       "trans": "Allemagne",
       "nationality": "Allemande"
+    },
+    {
+      "code": "FR",
+      "lang": "fr",
+      "trans": "France",
+      "nationality": "Française"
     }
   ]
 }
 ```
 
-## Civilities (`/megadex/civilities`)
+## Civilities
 
 Returns localized honorifics (`MR`, `MRS`) with full labels (`trans`) and abbreviations (`abbr`).
 
-```http
+```
 POST /megadex/civilities/search
 Content-Type: application/json
+Authorization: Bearer <access_token>
 
 {
   "filters": {
@@ -61,7 +65,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (`200 OK`):**
+**Response (200 OK):**
 
 ```json
 {
@@ -82,13 +86,14 @@ Content-Type: application/json
 }
 ```
 
-## Genders (`/megadex/genders`)
+## Genders
 
 Returns localized gender codes (`M`, `F`, `N`) with full labels (`trans`) and abbreviations (`abbr`).
 
-```http
+```
 POST /megadex/genders/search
 Content-Type: application/json
+Authorization: Bearer <access_token>
 
 {
   "filters": {
@@ -97,7 +102,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (`200 OK`):**
+**Response (200 OK):**
 
 ```json
 {
@@ -109,9 +114,9 @@ Content-Type: application/json
 }
 ```
 
-## Schema Endpoints
+## Get Entity Schemas
 
-```http
+```
 GET /megadex/countries/schema
 GET /megadex/civilities/schema
 GET /megadex/genders/schema

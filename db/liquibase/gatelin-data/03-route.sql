@@ -11,6 +11,7 @@
 --   96=archiveSocials   97=getSocialSchema
 --   98=searchCountries  99=getCountrySchema  100=searchCivilities 101=getCivilitySchema
 --   102=searchGenders   103=getGenderSchema  104=searchAudit  105=updateOwnProfile
+--   106=getBasicUserInfo
 -- Keep admin/src/app/core/app-config/app.acls.ts in sync with this order.
 --
 
@@ -54,5 +55,6 @@ INSERT INTO routes ("resourceId", pattern, name, description, protected, core, "
   ((SELECT id FROM resource WHERE name = 'megadex/audit'), '/search', 'searchAudit', 'Search the audit log', true, false, ARRAY[2], ARRAY[2], -1, 'system'),
 
   -- self-service profile update (/megadex/users/me; appended at the end so existing route IDs stay stable)
-  ((SELECT id FROM resource WHERE name = 'megadex/users'), '/me', 'updateOwnProfile', 'Update authenticated user profile', true, false, ARRAY[5], ARRAY[3], -1, 'system')
+  ((SELECT id FROM resource WHERE name = 'megadex/users'), '/me', 'updateOwnProfile', 'Update authenticated user profile', true, false, ARRAY[5], ARRAY[3], -1, 'system'),
+  ((SELECT id FROM resource WHERE name = 'megadex/users'), '/me', 'getBasicUserInfo', 'Get authenticated user basic info for the admin', true, false, ARRAY[1], ARRAY[1], -1, 'system')
 ON CONFLICT DO NOTHING;

@@ -1,8 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 40">
-  <g transform="translate(2, 2)">
-    <rect width="36" height="36" rx="8" fill="#18202c"/>
-    <circle cx="18" cy="14" r="6" fill="#e06a2b"/>
-    <path d="M8 30c0-5.5 4.5-10 10-10s10 4.5 10 10" fill="#e06a2b"/>
+<!-- Megadex wordmark: brand gradient tile + stylised M, followed by "egadex". -->
+<!-- Extra right padding so the wordmark is not clipped when Nunito falls back to Arial. -->
+<svg width="176" height="40" viewBox="0 0 176 40" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800&amp;display=swap');</style>
+    <linearGradient id="megadexTile" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#818CF8" />
+      <stop offset="100%" stop-color="#4338CA" />
+    </linearGradient>
+  </defs>
+  <rect width="40" height="40" rx="8.75" fill="url(#megadexTile)" />
+  <!-- The M is the logo path (73x100 viewBox) scaled to 26px tall and centred in the tile. -->
+  <g transform="translate(10.55 6.875) scale(0.2625)">
+    <path d="M 0 100 L 0 0 L 18 0 L 36 36 L 54 0 L 72 0 L 72 100
+             L 54 100 L 54 38 L 36 72 L 18 38 L 18 100 Z"
+          fill="#fff" />
   </g>
-  <text x="48" y="27" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="22" letter-spacing="1" fill="currentColor">MEGADEX</text>
+  <text x="48" y="29" font-family="Nunito, Arial, sans-serif" font-weight="800" font-size="34" fill="#6366F1">egadex</text>
 </svg>

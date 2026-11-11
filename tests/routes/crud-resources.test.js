@@ -6,10 +6,17 @@
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { SQLEntity } from "@dwtechs/antity-pgsql";
 import { jest } from "@jest/globals";
 import request from "supertest";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const execute = jest.fn(() => Promise.resolve({ rows: [{ userId: 1 }] }));
+jest.unstable_mockModule("@dwtechs/antity-pgsql", () => ({
+  execute,
+  SQLEntity,
+}));
 
 /** Tracked writes are rejected without a consumer, so every write request carries one. */
 const CONSUMER_HEADERS = {
