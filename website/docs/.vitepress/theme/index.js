@@ -1,10 +1,17 @@
-import DefaultTheme from 'vitepress/theme'
-import './custom.css'
-import AdminDemos from './AdminDemos.vue'
+import DefaultTheme from "vitepress/theme";
+import { h } from "vue";
+import AdminDemos from "./AdminDemos.vue";
+import BearFace from "./BearFace.vue";
 
+// The home hero takes its image from frontmatter, which can only name a file.
+// Filling the slot from here is what puts a live canvas there instead, and what
+// tells VPHero to lay the hero out in two columns at all.
 export default {
   extends: DefaultTheme,
-  enhanceApp({ app }) {
-    app.component('AdminDemos', AdminDemos)
+  Layout() {
+    return h(DefaultTheme.Layout, null, {
+      "home-hero-image": () => h(BearFace),
+      "home-features-after": () => h(AdminDemos),
+    });
   },
-}
+};

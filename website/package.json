@@ -1,16 +1,33 @@
 {
   "name": "megadex-docs",
   "version": "0.1.0-alpha.1",
-  "description": "Megadex Documentation",
-  "type": "module",
+  "description": "Documentation for Megadex, a user profile, preferences, and reference-data service.",
+  "private": true,
   "scripts": {
     "dev": "vitepress dev docs --host",
+    "prebuild": "npm run sync:shaders",
     "build": "vitepress build docs",
+    "sync:shaders": "node scripts/sync-shaders.mjs",
     "preview": "vitepress preview docs"
   },
+  "author": "ALTEN",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ALTEN-group/Megadex.git",
+    "directory": "website"
+  },
+  "bugs": {
+    "url": "https://github.com/ALTEN-group/Megadex/issues"
+  },
+  "homepage": "https://github.com/ALTEN-group/Megadex#readme",
+  "devDependencies": {
+    "vitepress": "1.6.4"
+  },
   "dependencies": {
-    "mermaid": "11.16.0",
-    "vitepress": "1.6.4",
+    "@1pizzateam/loopr": "2.0.0",
+    "@lcluber/roostrjs": "0.6.0",
+    "mermaid": "11.17.0",
     "vitepress-plugin-mermaid": "2.0.17"
   }
 }

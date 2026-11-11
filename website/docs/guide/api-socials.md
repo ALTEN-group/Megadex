@@ -1,14 +1,15 @@
-# Social Networks API
+# Social Networks
 
 The `socials` resource manages the catalog of supported social platforms (`social` table). Keys in a user's `socialsJsonAgg` object must match a non-archived `name` in this catalog.
 
-All endpoints are mounted under `/megadex/socials`.
+Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`.
 
 ## Search Social Networks
 
-```http
+```
 POST /megadex/socials/search
 Content-Type: application/json
+Authorization: Bearer <access_token>
 
 {
   "pagination": true,
@@ -22,7 +23,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (`200 OK`):**
+**Response (200 OK):**
 
 ```json
 {
@@ -58,11 +59,10 @@ Content-Type: application/json
 
 Adds one or more social platforms to the catalog. `name` is case-insensitively unique (`ux_social_name`).
 
-```http
+```
 POST /megadex/socials
 Content-Type: application/json
-x-consumer-user-id: 2
-x-consumer-name: admin
+Authorization: Bearer <access_token>
 
 {
   "rows": [
@@ -81,11 +81,10 @@ x-consumer-name: admin
 
 ## Update Social Networks
 
-```http
+```
 PUT /megadex/socials
 Content-Type: application/json
-x-consumer-user-id: 2
-x-consumer-name: admin
+Authorization: Bearer <access_token>
 
 {
   "rows": [
@@ -98,15 +97,21 @@ x-consumer-name: admin
 }
 ```
 
+## Get Social Network History
+
+```
+GET /megadex/socials/:id/history
+Authorization: Bearer <access_token>
+```
+
+Returns the audit trail for one social platform row from `log.history`.
+
 ## Archive Social Networks
 
-Soft-deletes one or more social platforms (`archived = true`, `archivedAt = NOW()`). Once archived, a social network can no longer be assigned in `socialsJsonAgg`.
-
-```http
+```
 POST /megadex/socials/archive
 Content-Type: application/json
-x-consumer-user-id: 2
-x-consumer-name: admin
+Authorization: Bearer <access_token>
 
 {
   "rows": [
@@ -115,11 +120,11 @@ x-consumer-name: admin
 }
 ```
 
-**Response:** `204 No Content`
+**Response (204 No Content):** rows are soft-deleted (`archived = true`, `archivedAt = NOW()`). Once archived, a social network can no longer be assigned in `socialsJsonAgg`, and the nightly cleanup job deletes it after two months.
 
-## Get Social Network History & Schema
+## Get Entity Schema
 
-```http
-GET /megadex/socials/:id/history
+```
 GET /megadex/socials/schema
+Authorization: Bearer <access_token>
 ```

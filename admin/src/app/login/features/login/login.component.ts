@@ -29,6 +29,7 @@ import { InputGroupModule } from "@openng/optimus-ui/inputgroup";
 import { InputGroupAddonModule } from "@openng/optimus-ui/inputgroupaddon";
 import { InputTextModule } from "@openng/optimus-ui/inputtext";
 import { LoginBackgroundComponent } from "app/login/ui/login-background/login-background.component";
+import { LoginBearComponent } from "app/login/ui/login-bear/login-bear.component";
 import { map, Observable, timer } from "rxjs";
 
 /** Minimum time the post-login greeting stays on screen. */
@@ -48,6 +49,7 @@ const WELCOME_MIN_DURATION_MS = 1000;
     CardModule,
     AutoFocusModule,
     LoginBackgroundComponent,
+    LoginBearComponent,
     InputGroupAddonModule,
     InputGroupModule,
     ThemeToggleButtonComponent,

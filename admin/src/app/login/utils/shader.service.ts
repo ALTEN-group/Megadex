@@ -13,6 +13,8 @@ export class ShaderService {
   private vertexLight = "";
   private fragment = "";
   private fragmentLight = "";
+  private bearVertex = "";
+  private bearFragment = "";
 
   public async load(): Promise<boolean> {
     return firstValueFrom(
@@ -41,6 +43,26 @@ export class ShaderService {
       .catch(() => false);
   }
 
+  /** Loaded independently so a failure does not block the animated background. */
+  public async loadBear(): Promise<boolean> {
+    return firstValueFrom(
+      forkJoin({
+        vertex: this.http.get(`${this.folder}bear-face_vert-ready.glsl`, {
+          responseType: "text",
+        }),
+        fragment: this.http.get(`${this.folder}bear-face_frag-ready.glsl`, {
+          responseType: "text",
+        }),
+      }),
+    )
+      .then((response) => {
+        this.bearVertex = response.vertex;
+        this.bearFragment = response.fragment;
+        return true;
+      })
+      .catch(() => false);
+  }
+
   public get vertexShader(): string {
     return this.vertex;
   }
@@ -55,5 +77,13 @@ export class ShaderService {
 
   public get fragmentLightShader(): string {
     return this.fragmentLight;
+  }
+
+  public get bearVertexShader(): string {
+    return this.bearVertex;
+  }
+
+  public get bearFragmentShader(): string {
+    return this.bearFragment;
   }
 }

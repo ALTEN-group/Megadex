@@ -1,255 +1,204 @@
-<template>
-  <section class="admin-demos">
-    <header class="admin-demos__header">
-      <span class="admin-demos__eyebrow">Bundled Angular Admin UI</span>
-      <h2 class="admin-demos__title">See it in action</h2>
-      <p class="admin-demos__lead">
-        Megadex ships with a full administration interface for managing user profiles,
-        roles, social network catalogs, and audit logs.
-      </p>
-    </header>
-
-    <div class="admin-demos__tabs" role="tablist" aria-label="Admin UI demos">
-      <button
-        v-for="(demo, i) in demos"
-        :key="demo.id"
-        type="button"
-        role="tab"
-        class="admin-demos__tab"
-        :class="{ 'is-active': i === active }"
-        :aria-selected="i === active"
-        @click="select(i)"
-      >
-        <span class="admin-demos__tab-num">0{{ i + 1 }}</span>
-        <span class="admin-demos__tab-text">
-          <span class="admin-demos__tab-title">{{ demo.title }}</span>
-          <span class="admin-demos__tab-caption">{{ demo.caption }}</span>
-        </span>
-      </button>
-    </div>
-
-    <div class="admin-demos__stage">
-      <div class="admin-demos__frame">
-        <div class="admin-demos__chrome" aria-hidden="true">
-          <span class="dot dot--r"></span>
-          <span class="dot dot--y"></span>
-          <span class="dot dot--g"></span>
-          <span class="admin-demos__url">{{ demos[active].url }}</span>
-        </div>
-        <video
-          ref="videoEl"
-          :key="demos[active].id"
-          class="admin-demos__video"
-          :src="withBase(demos[active].src)"
-          :poster="withBase(demos[active].poster)"
-          autoplay
-          muted
-          playsinline
-          preload="metadata"
-          @ended="advance"
-        ></video>
-      </div>
-    </div>
-  </section>
-</template>
-
 <script setup>
-import { ref } from 'vue'
-import { withBase } from 'vitepress'
+import { withBase } from "vitepress";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 const demos = [
   {
-    id: 'login',
-    title: 'Sign in & users table',
-    caption: 'Authenticate via the BFF and land on the users grid with roles and status columns.',
-    url: 'localhost:8100/megadex/users',
-    src: '/videos/admin-login.mp4',
-    poster: '/videos/admin-login.jpg',
+    name: "admin-login",
+    eyebrow: "Sign in",
+    title: "Secure sign-in through your BFF",
+    details:
+      'Administrators authenticate through <a href="https://gatelin.fr" target="_blank" rel="noopener">Gatelin</a>, the reference BFF. Once signed in, they manage users, roles, social network catalogs, table preferences and the audit log from one panel.',
+    link: "/guide/overview",
   },
   {
-    id: 'edit-form',
-    title: 'Social catalog editing & history',
-    caption: 'Open any row to update fields in a validated drawer and inspect the per-field audit trail.',
-    url: 'localhost:8100/megadex/socials',
-    src: '/videos/admin-edit-form.mp4',
-    poster: '/videos/admin-edit-form.jpg',
+    name: "admin-edit-form",
+    eyebrow: "Manage",
+    title: "Every entity, fully manageable",
+    details:
+      "Create, edit, archive and restore any record from ready-made CRUD screens. Forms follow the API schema, so each field shows a clear error message when a value is missing or out of range.",
+    link: "/guide/frontend#calling-the-admin-api",
   },
   {
-    id: 'table-preferences',
-    title: 'Saved table views',
-    caption: 'Filter, sort, and persist custom column layouts per operator account.',
-    url: 'localhost:8100/megadex/socials',
-    src: '/videos/admin-table-preferences.mp4',
-    poster: '/videos/admin-table-preferences.jpg',
+    name: "admin-table-preferences",
+    eyebrow: "Organize",
+    title: "Tables shaped to each administrator",
+    details:
+      "Pick the columns that matter, save them as a named view, and find it again on the next visit: views are stored server side, per user and per table.",
+    link: "/guide/overview",
   },
-]
+];
 
-const active = ref(0)
-const videoEl = ref(null)
+const videos = ref([]);
+let observer = null;
 
-function select(i) {
-  active.value = i
-}
+// Each video plays only while on screen, and never for users who asked for less motion.
+onMounted(() => {
+  if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const { target, isIntersecting } of entries) {
+        if (isIntersecting) target.play().catch(() => undefined);
+        else target.pause();
+      }
+    },
+    { threshold: 0.4 },
+  );
+  for (const video of videos.value) observer.observe(video);
+});
 
-function advance() {
-  active.value = (active.value + 1) % demos.length
-}
+onBeforeUnmount(() => observer?.disconnect());
 </script>
+
+<template>
+  <section class="admin-demos">
+    <header class="intro">
+      <p class="eyebrow">Admin panel</p>
+      <h2>See it in action</h2>
+      <p class="lead">
+        Everything Megadex stores can be inspected and managed from its Angular admin, without a
+        line of SQL.
+      </p>
+    </header>
+
+    <article v-for="(demo, index) in demos" :key="demo.name" class="demo" :class="{ reversed: index % 2 }">
+      <div class="frame">
+        <video
+          ref="videos"
+          :src="withBase(`/videos/${demo.name}.mp4`)"
+          :poster="withBase(`/videos/${demo.name}.jpg`)"
+          :aria-label="demo.title"
+          muted
+          loop
+          playsinline
+          controls
+          preload="none"
+        ></video>
+      </div>
+      <div class="text">
+        <p class="eyebrow">{{ demo.eyebrow }}</p>
+        <h3>{{ demo.title }}</h3>
+        <p v-html="demo.details"></p>
+        <a :href="withBase(demo.link)" class="more">Learn more →</a>
+      </div>
+    </article>
+  </section>
+</template>
 
 <style scoped>
 .admin-demos {
   max-width: 1152px;
-  margin: 4rem auto 2rem;
-  padding: 0 24px;
+  margin: 0 auto;
+  padding: 64px 24px 96px;
 }
 
-@media (min-width: 640px) {
-  .admin-demos {
-    padding: 0 48px;
-  }
-}
-
-@media (min-width: 960px) {
-  .admin-demos {
-    padding: 0 64px;
-  }
-}
-
-.admin-demos__header {
+.intro {
+  max-width: 640px;
+  margin: 0 auto 56px;
   text-align: center;
-  max-width: 680px;
-  margin: 0 auto 2rem;
 }
 
-.admin-demos__eyebrow {
-  display: inline-block;
-  font-size: 0.78rem;
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--vp-c-brand-1);
-  margin-bottom: 0.5rem;
 }
 
-.admin-demos__title {
-  margin: 0 0 0.75rem;
-  border: 0;
-  padding: 0;
-  font-size: 2rem;
-  line-height: 1.2;
+h2 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 40px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--vp-c-text-1);
 }
 
-.admin-demos__lead {
-  margin: 0;
-  font-size: 1.02rem;
-  line-height: 1.6;
+.lead {
+  margin: 16px 0 0;
+  font-size: 18px;
+  line-height: 28px;
   color: var(--vp-c-text-2);
 }
 
-.admin-demos__tabs {
+.demo {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .admin-demos__tabs {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.admin-demos__tab {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  text-align: left;
-  padding: 1rem 1.15rem;
-  border-radius: 12px;
-  border: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg-soft);
-  cursor: pointer;
-  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
-}
-
-.admin-demos__tab:hover {
-  border-color: var(--vp-c-brand-1);
-}
-
-.admin-demos__tab.is-active {
-  border-color: var(--vp-c-brand-1);
-  background: var(--vp-c-bg-elv);
-  box-shadow: 0 6px 24px -12px rgba(0, 0, 0, 0.25);
-}
-
-.admin-demos__tab-num {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--vp-c-brand-1);
-  padding-top: 0.15rem;
-}
-
-.admin-demos__tab-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.admin-demos__tab-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--vp-c-text-1);
-}
-
-.admin-demos__tab-caption {
-  font-size: 0.83rem;
-  line-height: 1.45;
-  color: var(--vp-c-text-2);
-}
-
-.admin-demos__frame {
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid var(--vp-c-divider);
-  background: #0f1419;
-  box-shadow: 0 22px 50px -22px rgba(0, 0, 0, 0.45);
-}
-
-.admin-demos__chrome {
-  display: flex;
+  gap: 24px;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.55rem 0.9rem;
-  background: #1a2129;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  display: inline-block;
-}
-.dot--r { background: #ff5f56; }
-.dot--y { background: #ffbd2e; }
-.dot--g { background: #27c93f; }
-
-.admin-demos__url {
-  margin-left: 0.6rem;
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.76rem;
-  color: rgba(255, 255, 255, 0.6);
+.demo + .demo {
+  margin-top: 72px;
 }
 
-.admin-demos__video {
+.frame {
+  padding: 8px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 16px;
+  background: var(--vp-c-bg-soft);
+  box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.35);
+}
+
+video {
   display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 16 / 10;
-  background: #0f1419;
+  border-radius: 10px;
+  background: var(--vp-c-bg-alt);
+}
+
+h3 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.text p:not(.eyebrow) {
+  margin: 0;
+  line-height: 26px;
+  color: var(--vp-c-text-2);
+}
+
+.text p :deep(a) {
+  font-weight: 500;
+  color: var(--vp-c-brand-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.more {
+  display: inline-block;
+  margin-top: 16px;
+  font-weight: 500;
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+}
+
+.more:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 960px) {
+  .demo {
+    grid-template-columns: 3fr 2fr;
+    gap: 48px;
+  }
+
+  .demo.reversed {
+    grid-template-columns: 2fr 3fr;
+  }
+
+  .demo.reversed .frame {
+    order: 2;
+  }
+
+  h2 {
+    font-size: 40px;
+    line-height: 48px;
+  }
 }
 </style>

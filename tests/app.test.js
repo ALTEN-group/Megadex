@@ -216,6 +216,43 @@ describe("Megadex routes", () => {
     expect(response.body.rows[0].rolesArrayAgg).toBeUndefined();
   });
 
+  test("blocks a non-super-admin from archiving or updating a super admin user or assigning role 1", async () => {
+    // Target user 3 holds role 1; caller 42 does not
+    execute.mockResolvedValue({ rows: [{ userId: 3 }] });
+    const archiveRes = await request(app)
+      .post("/megadex/users/archive")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "admin")
+      .send({ rows: [{ id: 3 }] });
+    expect(archiveRes.status).toBe(403);
+
+    execute.mockResolvedValue({ rows: [{ userId: 3 }] });
+    const updateRes = await request(app)
+      .put("/megadex/users")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "admin")
+      .send({ rows: [{ id: 3, active: false }] });
+    expect(updateRes.status).toBe(403);
+
+    execute.mockResolvedValue({ rows: [] });
+    const assignRes = await request(app)
+      .post("/megadex/users")
+      .set("x-consumer-user-id", "42")
+      .set("x-consumer-name", "admin")
+      .send({
+        rows: [
+          {
+            firstName: "A",
+            lastName: "B",
+            nickname: "ab",
+            email: "a@b.co",
+            roles: [1],
+          },
+        ],
+      });
+    expect(assignRes.status).toBe(403);
+  });
+
   test("rejects anonymous user mutations", async () => {
     const response = await request(app)
       .post("/megadex/users")

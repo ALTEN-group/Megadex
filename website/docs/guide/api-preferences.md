@@ -1,20 +1,19 @@
-# Preferences API
+# Preferences
 
-The `preferences` resource stores per-user Admin UI table configurations (`conf`) alongside locked system templates (`userId IS NULL`). Supported `:resource` values are `users` and `socials`.
+Preferences store per-user Admin UI configuration for a named resource (`users` or `socials`). The list for a resource merges **locked system templates** (`locked: true`) with the authenticated user's own rows (`locked: false`).
 
-All endpoints require a valid consumer identity (`x-consumer-user-id`, `x-consumer-name`) except `GET /megadex/preferences/schema`.
+Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`.
 
-## Get Preferences for a Resource
+## List Preferences
 
-Returns all locked system templates (`locked: true`) plus the authenticated user's personal preferences (`locked: false`) for `:resource`, ordered with templates first. Exactly one item has `isActive: true` (the user's selected preference in `preference_selection`, or the `"Default"` template if none is selected).
+Returns all locked system templates plus the authenticated user's personal preferences for `:resource`, ordered with templates first. Exactly one item has `isActive: true` (the user's selected preference in `preference_selection`, or the `"Default"` template if none is selected).
 
-```http
+```
 GET /megadex/preferences/users
-x-consumer-user-id: 2
-x-consumer-name: jdoe
+Authorization: Bearer <access_token>
 ```
 
-**Response (`200 OK`):**
+**Response (200 OK):**
 
 ```json
 {
@@ -49,15 +48,14 @@ x-consumer-name: jdoe
 }
 ```
 
-## Create a Personal Preference
+## Create Preferences
 
 Creates a new personal preference for the caller on `:resource`. If `isActive: true`, it also becomes the caller's active selection in `preference_selection`. Each user may create up to **5** personal preferences per resource (`check_preference_limit`), and personal preferences cannot reuse the name of a locked template (`check_preference_template_name`).
 
-```http
+```
 POST /megadex/preferences/socials
 Content-Type: application/json
-x-consumer-user-id: 2
-x-consumer-name: jdoe
+Authorization: Bearer <access_token>
 
 {
   "rows": [
@@ -77,17 +75,16 @@ x-consumer-name: jdoe
 
 ## Update or Select Preferences
 
-Updates personal preferences or selects a template.
+Updates personal preferences or selects a template:
 
 - **Selecting a locked template**: Sending a template's `id` with `isActive: true` and its unchanged `name` and `conf` updates `preference_selection` for the caller without modifying the template.
 - **Editing a locked template (fork-on-write)**: Sending a template's `id` with a modified `name` or `conf` leaves the locked template untouched and inserts a new personal preference row for the caller.
-- **Updating a personal preference**: Updates `name`, `conf`, and/or `isActive` on the caller's own row. Attempting to update another user's row is rejected with `404`.
+- **Updating a personal preference**: Updates `name`, `conf`, and/or `isActive` on the caller's own row. Attempting to update another user's row is rejected with **404**.
 
-```http
+```
 PUT /megadex/preferences/socials
 Content-Type: application/json
-x-consumer-user-id: 2
-x-consumer-name: jdoe
+Authorization: Bearer <access_token>
 
 {
   "rows": [
@@ -106,18 +103,20 @@ x-consumer-name: jdoe
 }
 ```
 
-## Delete a Personal Preference
+## Delete Preference
 
-Deletes a user-owned preference by `id`. Locked system templates and preferences belonging to other users cannot be deleted (`404`).
+Deletes a single preference owned by the authenticated user. Locked system templates and preferences belonging to other users cannot be deleted (**404**).
 
-```http
-DELETE /megadex/preferences/socials/8
-x-consumer-user-id: 2
-x-consumer-name: jdoe
+```
+DELETE /megadex/preferences/socials/:id
+Authorization: Bearer <access_token>
 ```
 
-## Get Preference Schema
+**Response (204 No Content)**
 
-```http
+## Get Entity Schema
+
+```
 GET /megadex/preferences/schema
+Authorization: Bearer <access_token>
 ```

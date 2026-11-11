@@ -1,12 +1,15 @@
-# Audit Logs API
+# Audit Logs
 
-The `audit` resource exposes a read-only search endpoint over the `log.audit` view (`POST /megadex/audit/search`), designed for the Admin UI **Journal d'audit** page and security compliance queries.
+The `audit` resource exposes a read-only search endpoint over the `log.audit` view (`POST /megadex/audit/search`), powering the Admin UI audit log screen and security compliance queries.
+
+Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same route publicly under `/api/megadex/audit/search`.
 
 ## Search Audit Logs
 
-```http
+```
 POST /megadex/audit/search
 Content-Type: application/json
+Authorization: Bearer <access_token>
 
 {
   "pagination": true,
@@ -21,7 +24,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (`200 OK`):**
+**Response (200 OK):**
 
 ```json
 {

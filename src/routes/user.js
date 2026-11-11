@@ -11,6 +11,7 @@ import {
 import { archivePwd } from "../middlewares/http/archive-pwd.js";
 import { createPwd } from "../middlewares/http/create-pwd.js";
 import { prepareRestoreRows } from "../middlewares/mappers/restore-rows.js";
+import { assertSuperAdminCeiling } from "../middlewares/mappers/user/assertSuperAdminCeiling.js";
 import schema from "../middlewares/schema.js";
 import {
   mapUserRoles,
@@ -161,6 +162,7 @@ router.post(
   requireConsumer,
   enforceAcl(userEnt, "insert"),
   rolesToDatabase,
+  assertSuperAdminCeiling,
   userEnt.addArraySubstack,
   rolesToApi,
   createPwd,
@@ -170,6 +172,7 @@ router.put(
   requireConsumer,
   enforceAcl(userEnt, "existing"),
   rolesToDatabase,
+  assertSuperAdminCeiling,
   userEnt.updateArraySubstack,
   rolesToApi,
 );
@@ -178,6 +181,7 @@ router.post(
   requireConsumer,
   enforceAcl(userEnt, "existing"),
   preventSelfArchive,
+  assertSuperAdminCeiling,
   userEnt.archive,
   archivePwd,
 );
@@ -186,6 +190,7 @@ router.post(
   requireConsumer,
   enforceAcl(userEnt, "existing"),
   prepareRestoreRows,
+  assertSuperAdminCeiling,
   userEnt.restore,
 );
 router.get(

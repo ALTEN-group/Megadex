@@ -5,9 +5,10 @@ const base = process.env.VITEPRESS_BASE || (process.env.NODE_ENV === 'production
 
 export default withMermaid(defineConfig({
   title: 'Megadex',
-  description: 'User profile, preferences, and reference-data microservice',
+  description: 'User profile, preferences, and reference-data service storing user accounts, aggregated roles, social handles, and localized catalogs',
   base,
   vite: {
+    // mermaid >= 11.16 pulls CJS-only fastdom, which vitepress-plugin-mermaid does not pre-bundle
     optimizeDeps: {
       include: ['fastdom', 'fastdom/extensions/fastdom-promised.js'],
     },
@@ -20,20 +21,17 @@ export default withMermaid(defineConfig({
     siteTitle: false,
     sidebar: [
       {
-        text: 'Overview',
         items: [
-          { text: 'Getting Started', link: '/guide/getting-started' },
-          { text: 'Core Concepts', link: '/guide/concepts' },
-          { text: 'Admin UI', link: '/guide/admin' },
+          { text: 'Overview', link: '/guide/overview' },
         ],
       },
       {
         text: 'Deployment',
         items: [
-          { text: 'Docker Compose', link: '/guide/docker' },
-          { text: 'Environment Variables', link: '/guide/env' },
-          { text: 'Database & Migrations', link: '/guide/database' },
-          { text: 'Production Guide', link: '/guide/production' },
+          { text: 'Docker Compose', link: '/guide/deployment' },
+          { text: 'Environment Variables', link: '/guide/configuration' },
+          { text: 'Integration', link: '/guide/integration' },
+          { text: 'Troubleshooting', link: '/guide/troubleshooting' },
         ],
       },
       {
@@ -44,14 +42,14 @@ export default withMermaid(defineConfig({
           { text: 'Reference Lookups', link: '/guide/api-lookups' },
           { text: 'Preferences', link: '/guide/api-preferences' },
           { text: 'Audit Logs', link: '/guide/api-audit-logs' },
-          { text: 'Health Checks', link: '/guide/api-health' },
         ],
       },
       {
         text: 'Architecture',
         items: [
-          { text: 'Request Flow & Pipeline', link: '/guide/architecture' },
-          { text: 'Security & ACLs', link: '/guide/security' },
+          { text: 'Request Flow', link: '/guide/architecture' },
+          { text: 'Data Model', link: '/guide/data-model' },
+          { text: 'Frontend Integration', link: '/guide/frontend' },
         ],
       },
     ],
