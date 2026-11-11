@@ -31,11 +31,12 @@ Because a single row carries the profile, role IDs, and social handles together,
 
 ### Lifecycle synchronization
 
-When a user is created, deactivated, role-updated, or archived, Megadex keeps upstream authentication services in sync when their internal URLs are configured:
+When a user is created or archived, Megadex can synchronize the corresponding password record with Foxnox when `PWD_CREATE_URL` is configured:
 
 - **User creation (`POST /megadex/users`)** — Calls `PWD_CREATE_URL` to provision a password record in Foxnox. If provisioning fails, the newly inserted user is automatically soft-archived so an unprovisioned account is never left active.
-- **Role change or deactivation (`PUT /megadex/users`)** — Calls `CONSUMER_URL` to revoke the user's active Gatelin sessions immediately when `active` becomes `false` or `roles` changes.
-- **User archival (`POST /megadex/users/archive`)** — Archives the user's Foxnox password record and revokes their active Gatelin sessions in parallel.
+- **User archival (`POST /megadex/users/archive`)** — Archives the user's active Foxnox password record.
+
+Megadex does not revoke Gatelin sessions after role changes, deactivation, or archival. Existing sessions remain usable until their access tokens expire.
 
 ### Super-admin role ceiling
 

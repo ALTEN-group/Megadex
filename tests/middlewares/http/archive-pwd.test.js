@@ -1,100 +1,79 @@
-// @ts-check
+/** @jest-environment node */
 import { jest } from "@jest/globals";
-import { archivePwd } from "../../../src/middlewares/http/archive-pwd.js";
-import { syncUserLifecycle } from "../../../src/middlewares/http/sync-user-lifecycle.js";
 
-describe("user lifecycle propagation (Foxnox pwd archive & Gatelin session revocation)", () => {
-  const originalEnv = { ...process.env };
-  const originalFetch = global.fetch;
+const archivePasswords = jest.fn();
+jest.unstable_mockModule("../../../src/services/pwd.js", () => ({
+  archivePasswords,
+}));
+const { archivePwd } = await import(
+  "../../../src/middlewares/http/archive-pwd.js"
+);
 
-  afterEach(() => {
-    process.env = { ...originalEnv };
-    global.fetch = originalFetch;
+const RETRY =
+  "User profile archived, but authentication cleanup failed. Retry the archive request.";
+
+describe("archivePwd", () => {
+  let consumer;
+  let res;
+  let next;
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    archivePasswords.mockResolvedValue(undefined);
+    consumer = { userId: 1, nickname: "admin" };
+    res = { locals: { consumer } };
+    next = jest.fn();
   });
 
-  it("archivePwd searches and archives active Foxnox passwords and Gatelin sessions", async () => {
-    process.env.PWD_CREATE_URL = "http://foxnox:3000/foxnox/pwd";
-    process.env.CONSUMER_URL = "http://gatelin:3000/gatelin/consumers";
+  it.each([
+    [[1, 7]],
+    [[{ id: 1 }, { id: 7 }]],
+    [["1", { id: "7" }, 7, { id: 1 }, "07"]],
+  ])(
+    "should normalize and dedupe valid rows %j before archiving passwords",
+    async (rows) => {
+      await archivePwd({ body: { rows } }, res, next);
 
-    const fetchMock = jest.fn(async (url) => {
-      if (url === "http://foxnox:3000/foxnox/pwd/search") {
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({ rows: [{ id: 101 }] }),
-        };
-      }
-      if (url === "http://gatelin:3000/gatelin/consumers/search") {
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({ rows: [{ id: 201 }, { id: 202 }] }),
-        };
-      }
-      return { ok: true, status: 200, json: async () => ({}) };
-    });
-    global.fetch = /** @type {any} */ (fetchMock);
+      expect(archivePasswords).toHaveBeenCalledTimes(1);
+      expect(archivePasswords).toHaveBeenCalledWith([1, 7], consumer);
+      expect(next.mock.calls).toEqual([[]]);
+    },
+  );
 
-    const req = /** @type {any} */ ({
-      body: { rows: [{ id: 7 }] },
-    });
-    const res = /** @type {any} */ ({
-      locals: { consumer: { userId: 1, nickname: "admin" } },
-    });
-    const next = jest.fn();
+  it.each([
+    undefined,
+    null,
+    {},
+    { rows: null },
+    { rows: [] },
+    { rows: "1" },
+    ...[null, undefined, {}, 0, -1, 1.5, "", "abc", true, []].map((id) => ({
+      rows: [1, id],
+    })),
+    { rows: [{ id: 0 }] },
+    { rows: [{ id: null }] },
+  ])("should reject invalid body %j without starting cleanup", async (body) => {
+    await archivePwd({ body }, res, next);
 
-    await archivePwd(req, res, next);
-
-    expect(next).toHaveBeenCalledWith();
-    const calledUrls = fetchMock.mock.calls.map(([u]) => u);
-    expect(calledUrls).toEqual(
-      expect.arrayContaining([
-        "http://foxnox:3000/foxnox/pwd/search",
-        "http://foxnox:3000/foxnox/pwd/archive",
-        "http://gatelin:3000/gatelin/consumers/search",
-        "http://gatelin:3000/gatelin/consumers/archive",
-      ]),
-    );
+    expect(next.mock.calls).toEqual([
+      [{ statusCode: 400, message: "Invalid user ids for archive" }],
+    ]);
+    expect(archivePasswords).not.toHaveBeenCalled();
   });
 
-  it("syncUserLifecycle revokes Gatelin sessions when a user is deactivated or roles change", async () => {
-    process.env.CONSUMER_URL = "http://gatelin:3000/gatelin/consumers";
+  it.each([
+    [{ statusCode: 503 }, 502],
+    [{ statusCode: 404 }, 502],
+    [{ statusCode: 504 }, 504],
+    [new Error("network down"), 502],
+  ])(
+    "should forward retry guidance when password cleanup fails with %j",
+    async (error, statusCode) => {
+      archivePasswords.mockRejectedValue(error);
 
-    const fetchMock = jest.fn(async (url) => {
-      if (url === "http://gatelin:3000/gatelin/consumers/search") {
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({ rows: [{ id: 301 }] }),
-        };
-      }
-      return { ok: true, status: 204, json: async () => null };
-    });
-    global.fetch = /** @type {any} */ (fetchMock);
+      await archivePwd({ body: { rows: [7] } }, res, next);
 
-    const req = /** @type {any} */ ({
-      body: {
-        rows: [
-          { id: 9, active: false },
-          { id: 10, firstName: "UnchangedSession" },
-        ],
-      },
-    });
-    const res = /** @type {any} */ ({
-      locals: { consumer: { userId: 1, nickname: "admin" } },
-    });
-    const next = jest.fn();
-
-    await syncUserLifecycle(req, res, next);
-
-    expect(next).toHaveBeenCalledWith();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    const searchBody = JSON.parse(
-      /** @type {any} */ (fetchMock.mock.calls[0])[1].body,
-    );
-    expect(searchBody.filters.userId).toEqual({
-      value: [9],
-      matchMode: "in",
-    });
-  });
+      expect(next.mock.calls).toEqual([[{ statusCode, message: RETRY }]]);
+    },
+  );
 });

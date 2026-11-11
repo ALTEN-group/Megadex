@@ -125,9 +125,8 @@ services:
       APP_NAME: my-project
       ENV_NAME: local
       SERVICE_NAME: my-project-megadex-local
-      # Optional lifecycle hooks into Foxnox and Gatelin
+      # Optional password lifecycle hook into Foxnox
       PWD_CREATE_URL: http://my-project-foxnox-local:3000/foxnox/pwd
-      CONSUMER_URL: http://my-project-gatelin-local:3000/gatelin/consumers
       # Bundled Admin UI
       ADMIN_PORT: 8080
       ADMIN_BASE_PATH: /megadex

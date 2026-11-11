@@ -55,7 +55,6 @@ describe("env", () => {
         DB_JOB_USER: "megadex_job",
         DB_JOB_PWD: "secret",
         PWD_CREATE_URL: "http://megadex-foxnox-local:3000/foxnox/pwd",
-        CONSUMER_URL: "http://megadex-gatelin-local:3000/gatelin/consumers",
       }),
     ).toEqual([]);
 
@@ -66,15 +65,5 @@ describe("env", () => {
         PWD_CREATE_URL: "not-a-url",
       }),
     ).toContain('PWD_CREATE_URL is not a valid http(s) URL: "not-a-url"');
-
-    expect(
-      collectEnvErrors({
-        DB_JOB_USER: "megadex_job",
-        DB_JOB_PWD: "secret",
-        CONSUMER_URL: "ftp://megadex-gatelin-local/gatelin/consumers",
-      }),
-    ).toContain(
-      'CONSUMER_URL is not a valid http(s) URL: "ftp://megadex-gatelin-local/gatelin/consumers"',
-    );
   });
 });

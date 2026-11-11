@@ -16,10 +16,10 @@ NC='\033[0m' # No Color
 echo -e "${YELLOW}🗑️  Resetting admin service...${NC}"
 echo -e ""
 
-# Load environment variables
+# Load only service naming variables; other dotenv values may not be valid shell syntax.
 if [[ -f docker/conf/.env.dev ]]; then
   set -a
-  source <(grep -v '^#' docker/conf/.env.dev | grep -v '^UID=')
+  source <(grep -E '^(APP_NAME|ENV_NAME)=' docker/conf/.env.dev)
   set +a
   echo -e "${BLUE}ℹ${NC}  Loaded environment variables from docker/conf/.env.dev"
 else

@@ -105,7 +105,7 @@ sequenceDiagram
     end
 ```
 
-When an administrator later deactivates that user (`active: false`), changes their `roles`, or archives them (`POST /megadex/users/archive`), Megadex calls `CONSUMER_URL` on Gatelin to revoke the user's cached sessions immediately.
+When an administrator later deactivates that user (`active: false`), changes their `roles`, or archives them (`POST /megadex/users/archive`), Megadex does not revoke the user's cached Gatelin session. Archived or inactive users cannot refresh their sessions, which remain usable until the current access token expires.
 
 ## Background Jobs
 

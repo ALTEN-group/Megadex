@@ -146,7 +146,7 @@ Authorization: Bearer <access_token>
 
 Updates one or more users by `id`. Sending `roles` replaces the user's `user_role` rows; sending `socialsJsonAgg` reconciles the user's `user_social` handles (setting a key to `null` or `""` removes that social handle; omitting `socialsJsonAgg` leaves existing handles unchanged).
 
-When `CONSUMER_URL` is configured, deactivating a user (`active: false`) or modifying their `roles` immediately revokes their cached BFF sessions. Modifying a user who holds role `1` or assigning role `1` requires the caller to hold role `1`.
+Modifying a user who holds role `1` or assigning role `1` requires the caller to hold role `1`. Megadex does not revoke Gatelin sessions after role changes or deactivation; archived and inactive users cannot refresh their sessions, which remain usable until the current access token expires.
 
 ```
 PUT /megadex/users
@@ -193,9 +193,61 @@ Authorization: Bearer <access_token>
 }
 ```
 
-**Response (204 No Content):** rows are soft-deleted — flagged `archived` with an `archivedAt` timestamp rather than removed. When `PWD_CREATE_URL` and `CONSUMER_URL` are set, Megadex also archives their Foxnox password rows and revokes their active Gatelin sessions. The nightly cleanup job deletes archived rows for good after two months.
+**Response (204 No Content):** rows are soft-deleted — flagged `archived` with an `archivedAt` timestamp rather than removed. When `PWD_CREATE_URL` is set, Megadex also archives their Foxnox password rows. Gatelin sessions are not revoked; an existing session remains usable until its access token expires. The nightly cleanup job deletes archived rows for good after two months.
 
-## Get Entity Schema
+A consumer cannot archive their own account: a batch containing the caller's id is rejected with `403` and nothing is archived.
+
+Rows accept bare ids or `{ "id": n }` objects. When `PWD_CREATE_URL` is
+configured, archiving also archives active Foxnox passwords. Megadex does not
+revoke Gatelin sessions: Gatelin refuses to refresh tokens for archived or
+inactive users, so an open session ends when its access token expires
+(`ACCESS_TOKEN_DURATION` in Gatelin). The same applies to deactivation and role
+changes on `PUT /megadex/users`. Foxnox invalidates outstanding recovery
+links, login challenges, and login-resume tickets before archiving passwords
+(requires the corresponding Foxnox archive update).
+
+Cross-service cleanup is not a distributed transaction: the profile is already
+archived when cleanup starts. An upstream failure returns `502` (`504` for a
+timeout), with a message asking the caller to retry the archive request.
+Repeating the same request retries remaining cleanup without restoring the
+profile. A missing `PWD_CREATE_URL` retains standalone behavior and skips the
+integration.
+
+## Restore Users
+
+Restores archived user profiles (`archived = false`, `archivedAt = NULL`), preserving their `active` state. Rows accept bare ids or `{ "id": n }` objects; rows that are not archived are left unchanged. Gatelin grants this route to Super admin and Admin; the admin UI exposes it from the Users CRUD dialog or a table selection.
+
+```http
+POST /megadex/users/restore
+Content-Type: application/json
+x-consumer-user-id: 2
+x-consumer-name: admin
+
+{
+  "rows": [5, 6]
+}
+```
+
+| Status | Meaning |
+| --- | --- |
+| `200` | Restored (also returned when no row was archived) |
+| `400` | Missing `rows` or invalid user id |
+| `401` | Missing consumer headers |
+| `403` | Rows outside the caller's ACL conditions |
+
+Foxnox passwords stay archived until the user completes a separate password reset;
+previous Gatelin sessions are not revoked, so a refresh token that has not yet
+expired (Gatelin `REFRESH_TOKEN_DURATION`) works again once the profile is
+restored. Restoration does not send an email automatically:
+the user selects **Forgot password** on the login page to request a recovery link.
+Completing recovery for an active restored profile replaces the newest archived
+password's hash before unarchiving that credential, preserves its 2FA enrollment,
+and leaves older passwords archived (requires the corresponding Foxnox recovery
+update). Inactive profiles remain unable to recover or sign in until reactivated.
+If password records have already been permanently purged, administrator
+provisioning is required. The user must sign in again after choosing the new password.
+
+## Get User Schema
 
 ```
 GET /megadex/users/schema

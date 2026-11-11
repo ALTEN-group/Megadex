@@ -12,7 +12,7 @@ const REQUIRED = [
 /**
  * Optional downstream HTTP endpoints validated when present.
  */
-const OPTIONAL_URLS = ["PWD_CREATE_URL", "CONSUMER_URL"];
+const OPTIONAL_URLS = ["PWD_CREATE_URL"];
 
 /**
  * @param {string} value

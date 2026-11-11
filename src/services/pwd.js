@@ -1,31 +1,14 @@
 // @ts-check
-import { isArray } from "@dwtechs/checkard";
+import { isArray, isValidInteger } from "@dwtechs/checkard";
 import { log } from "@dwtechs/winstan";
-
-const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS) || 30000;
+import http from "../utils/http.js";
 
 function consumerHeaders(consumer) {
   return {
-    "content-type": "application/json",
     accept: "application/json",
     "x-consumer-user-id": String(consumer.userId),
     "x-consumer-name": String(consumer.nickname),
   };
-}
-
-function wrapNetworkError(label, err) {
-  if (err?.statusCode) return err;
-  const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
-  log.error(`${label} request failed: ${err?.name}: ${err?.message || err}`);
-  const upstreamErr = /** @type {Error & { statusCode?: number }} */ (
-    new Error(
-      timedOut
-        ? "HTTP(504): Upstream timeout"
-        : "HTTP(503): Service Unavailable",
-    )
-  );
-  upstreamErr.statusCode = timedOut ? 504 : 503;
-  return upstreamErr;
 }
 
 /**
@@ -41,27 +24,13 @@ export async function provisionPasswords(userIds, consumer) {
   const url = process.env.PWD_CREATE_URL?.trim();
   if (!url || !isArray(userIds, "!0")) return;
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: consumerHeaders(consumer),
-      body: JSON.stringify({
-        rows: userIds.map((userId) => ({ userId })),
-      }),
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    });
-
-    if (!res.ok) {
-      log.error(`PWD_CREATE_URL returned ${res.status}: ${res.statusText}`);
-      const err = /** @type {Error & { statusCode?: number }} */ (
-        new Error(`HTTP(${res.status}): ${res.statusText}`)
-      );
-      err.statusCode = res.status;
-      throw err;
-    }
-  } catch (err) {
-    throw wrapNetworkError("PWD_CREATE_URL", err);
-  }
+  await http.query(
+    "post",
+    url,
+    undefined,
+    { rows: userIds.map((userId) => ({ userId })) },
+    consumerHeaders(consumer),
+  );
 }
 
 /**
@@ -77,58 +46,51 @@ export async function archivePasswords(userIds, consumer) {
   const baseUrl = process.env.PWD_CREATE_URL?.trim().replace(/\/+$/, "");
   if (!baseUrl || !isArray(userIds, "!0")) return;
 
+  const headers = consumerHeaders(consumer);
+  let data;
   try {
-    const searchRes = await fetch(`${baseUrl}/search`, {
-      method: "POST",
-      headers: consumerHeaders(consumer),
-      body: JSON.stringify({
-        first: 0,
-        rows: 1000,
+    ({ data } = await http.query(
+      "post",
+      `${baseUrl}/search`,
+      undefined,
+      {
         filters: {
           userId: { value: userIds, matchMode: "in" },
-          archived: { value: false, matchMode: "equals" },
+          archived: { value: false, matchMode: "is" },
         },
         select: ["id"],
-      }),
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    });
-
-    if (!searchRes.ok) {
-      log.error(
-        `PWD_CREATE_URL/search returned ${searchRes.status}: ${searchRes.statusText}`,
-      );
-      const err = /** @type {Error & { statusCode?: number }} */ (
-        new Error(`HTTP(${searchRes.status}): ${searchRes.statusText}`)
-      );
-      err.statusCode = searchRes.status;
-      throw err;
-    }
-
-    const body = await searchRes.json();
-    const pwdIds = (body?.rows || [])
-      .map((r) => Number(r?.id))
-      .filter((id) => Number.isInteger(id) && id > 0);
-
-    if (!pwdIds.length) return;
-
-    const archiveRes = await fetch(`${baseUrl}/archive`, {
-      method: "POST",
-      headers: consumerHeaders(consumer),
-      body: JSON.stringify({ ids: pwdIds }),
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    });
-
-    if (!archiveRes.ok) {
-      log.error(
-        `PWD_CREATE_URL/archive returned ${archiveRes.status}: ${archiveRes.statusText}`,
-      );
-      const err = /** @type {Error & { statusCode?: number }} */ (
-        new Error(`HTTP(${archiveRes.status}): ${archiveRes.statusText}`)
-      );
-      err.statusCode = archiveRes.status;
-      throw err;
-    }
+      },
+      headers,
+    ));
   } catch (err) {
-    throw wrapNetworkError("PWD_CREATE_URL", err);
+    // antity answers an empty search with 404: no active password to archive.
+    if (err?.statusCode === 404) return;
+    throw err;
   }
+
+  if (
+    !isArray(data?.rows) ||
+    data.rows.some((row) => !isValidInteger(row?.id, 1, undefined, false))
+  ) {
+    log.error("PWD_CREATE_URL/search returned invalid password rows");
+    throw Object.assign(
+      new Error("HTTP(502): Invalid password search response"),
+      {
+        statusCode: 502,
+      },
+    );
+  }
+  const pwdIds = [...new Set(data.rows.map((row) => Number(row.id)))];
+
+  if (!pwdIds.length) return;
+
+  await http.query(
+    "post",
+    `${baseUrl}/archive`,
+    undefined,
+    {
+      rows: pwdIds.map((id) => ({ id })),
+    },
+    headers,
+  );
 }

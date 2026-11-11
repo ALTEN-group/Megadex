@@ -197,7 +197,6 @@ services:
       SERVER_SCHEME: ${SERVER_SCHEME}
       SERVICE_NAME: ${MEGADEX_HOST}
       PWD_CREATE_URL: ${MEGADEX_PWD_CREATE_URL:-}
-      CONSUMER_URL: ${MEGADEX_CONSUMER_URL:-}
       # Bundled admin UI, served on a dedicated internal port.
       ADMIN_PORT: ${ADMIN_PORT}
       ADMIN_BASE_PATH: ${ADMIN_BASE_PATH:-/megadex}

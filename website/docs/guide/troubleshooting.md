@@ -71,4 +71,4 @@ Check the active catalog with `POST /megadex/socials/search` (filtering `archive
 
 ## Role Changes Do Not Take Effect Immediately
 
-When an administrator updates a user's `roles` or sets `active: false` via `PUT /megadex/users`, Megadex revokes the user's cached BFF sessions only if `CONSUMER_URL` is configured (`http://<gatelin-host>:3000/gatelin/consumers`). If `CONSUMER_URL` is unset, the user's existing JWT session in Gatelin remains cached until their access token expires.
+Megadex does not revoke Gatelin sessions when an administrator updates a user's `roles`, sets `active: false`, or archives the account. Existing sessions remain usable until the access token expires; archived or inactive accounts cannot refresh their sessions.

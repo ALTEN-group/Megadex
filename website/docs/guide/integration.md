@@ -16,18 +16,18 @@ When `/megadex/users/search` is called on the internal network without `x-consum
 
 ## 2. Point Megadex at Foxnox and Gatelin
 
-When an administrator creates a user, changes their roles, deactivates them, or archives them in Megadex, Megadex can propagate those changes immediately to Foxnox and Gatelin:
+When an administrator creates or archives a user in Megadex, Megadex can synchronize the corresponding password record in Foxnox:
 
 ```
 PWD_CREATE_URL=http://my-project-foxnox-local:3000/foxnox/pwd
-CONSUMER_URL=http://my-project-gatelin-local:3000/gatelin/consumers
 ```
 
 | Endpoint | Triggered by | What it does |
 |---|---|---|
 | `POST /foxnox/pwd` (`PWD_CREATE_URL`) | `POST /megadex/users` | Generates and stores a password hash in Foxnox for each new user. If Foxnox is unreachable or rejects the request, Megadex soft-archives the newly inserted user row so no account is left active without credentials. |
 | `POST /foxnox/pwd/archive` (derived from `PWD_CREATE_URL`) | `POST /megadex/users/archive` | Archives the user's password row in Foxnox so it stops matching logins. |
-| `POST /gatelin/consumers/search` & `/archive` (`CONSUMER_URL`) | `PUT /megadex/users` (when `active: false` or `roles` changes), `POST /megadex/users/archive` | Finds and archives the user's active sessions in Gatelin so role changes, deactivation, and archival take effect immediately without waiting for JWT expiry. |
+
+Megadex does not revoke Gatelin sessions after role changes, deactivation, or archival. Existing sessions remain usable until their access tokens expire.
 
 ## 3. Register Megadex with the BFF (Gatelin example)
 
@@ -46,8 +46,8 @@ The seed registers:
 |---|---|
 | `01-service.sql` | The `megadex` service with an empty pattern because Megadex mounts its routers under `/megadex/*` |
 | `02-resource.sql` | Resources `megadex/users`, `megadex/preferences`, `megadex/socials`, `megadex/countries`, `megadex/civilities`, `megadex/genders`, `megadex/audit` |
-| `03-route.sql` | The 25 protected JSON routes (route IDs `82`–`106`): user CRUD, `/megadex/users/me` (`GET` and `PUT`), preferences CRUD, socials CRUD, reference lookup searches and schemas, and audit search |
-| `04-permission.sql` | Grants all Megadex routes to **Super admin** (role 1) and **Admin** (role 2), and grants self-service `/megadex/users/me` (`GET` and `PUT`) to every non-archived role |
+| `03-route.sql` | The 27 protected JSON routes (route IDs `82`–`108`): user CRUD, `/megadex/users/me` (`GET` and `PUT`), user/social restore, preferences CRUD, socials CRUD, reference lookup searches and schemas, and audit search |
+| `04-permission.sql` | Grants all Megadex routes to **Super admin** (role 1) and **Admin** (role 2), grants self-service `/megadex/users/me` (`GET` and `PUT`) to every non-archived role, and exposes restore routes to the administrator roles |
 | `05-cors.sql` | Allowed browser origins (CORS whitelist) |
 
 ### Route summary (`03-route.sql`)
@@ -60,6 +60,7 @@ The seed registers:
 | `98`–`103` | `megadex/countries`, `civilities`, `genders` | `/search`, `/schema` | `POST`/`GET` | Localized reference lookups |
 | `104` | `megadex/audit` | `/search` | `POST` | Global audit log search |
 | `105`–`106` | `megadex/users` | `/me` | `PUT` / `GET` | Self-service profile read & update |
+| `107`–`108` | `megadex/users`, `megadex/socials` | `/restore` | `POST` | Restore archived users and social networks |
 
 ### Consumer and ACL headers
 

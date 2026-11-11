@@ -50,9 +50,10 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-# Load container names + postgres credentials from .env.dev.
+# Load only naming and seeding variables; unrelated dotenv values are not shell syntax.
 ENV_TMP=$(mktemp)
-grep -v '^#' "$ENV_FILE" | grep -v '^UID=' > "$ENV_TMP"
+trap 'rm -f "$ENV_TMP"' EXIT
+grep -E '^(APP_NAME|ENV_NAME|FOXNOX_HOST|POSTGRES_HOST|POSTGRES_ROOT_USER|POSTGRES_ROOT_PWD|FOXNOX_DB_NAME|MEGADEX_DB_NAME|DEFAULT_PORT|SWAGGER_HOST)=' "$ENV_FILE" > "$ENV_TMP"
 set -a
 # shellcheck disable=SC1090
 source "$ENV_TMP"
@@ -174,7 +175,8 @@ while IFS=$'\t' read -r uid pwd; do
   sedi -e "s|__EMAIL_${uid}__|$(sed_escape "$email")|g" -e "s|__PWD_${uid}__|$(sed_escape "$pwd")|g" "$SWAGGER_FILE"
   # 6. The first user becomes the e2e login (docker/conf/.env.dev is gitignored).
   if [[ "$E2E_SET" == false ]]; then
-    sedi -e "s|^E2E_EMAIL=.*|E2E_EMAIL=$(sed_escape "$email")|" -e "s|^E2E_PASSWORD=.*|E2E_PASSWORD=$(sed_escape "$pwd")|" "$ENV_FILE"
+    # Single quotes: scripts `source` this file and generated passwords may contain shell metacharacters.
+    sedi -e "s|^E2E_EMAIL=.*|E2E_EMAIL=$(sed_escape "$email")|" -e "s|^E2E_PASSWORD=.*|E2E_PASSWORD='$(sed_escape "$pwd")'|" "$ENV_FILE"
     E2E_SET=true
   fi
 done <<< "$PAIRS"

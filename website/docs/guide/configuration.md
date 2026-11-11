@@ -34,8 +34,7 @@ When paired with a password service ([Foxnox](https://foxnox.fr)) and a BFF ([Ga
 | Variable | Default | Description |
 |---|---|---|
 | `PWD_CREATE_URL` | — | Credential-provisioning endpoint on your password service (e.g. `http://<foxnox-host>:3000/foxnox/pwd`). When set, `POST /megadex/users` provisions a password row for each created user (and soft-archives the new user if provisioning fails), and `POST /megadex/users/archive` archives the user's password row. |
-| `CONSUMER_URL` | — | Consumer sessions endpoint on your BFF (e.g. `http://<gatelin-host>:3000/gatelin/consumers`). When set, archiving a user, deactivating a user (`active: false`), or updating their `roles` immediately revokes their cached BFF sessions. |
-| `UPSTREAM_TIMEOUT_MS` | `30000` | Timeout in milliseconds for outbound HTTP calls to `PWD_CREATE_URL` and `CONSUMER_URL`. |
+| `UPSTREAM_TIMEOUT_MS` | `30000` | Timeout in milliseconds for outbound HTTP calls to `PWD_CREATE_URL`. |
 
 ## Admin UI
 

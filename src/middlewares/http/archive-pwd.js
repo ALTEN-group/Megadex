@@ -1,11 +1,11 @@
 // @ts-check
-import { isArray, isInteger } from "@dwtechs/checkard";
+import { isArray, isObject, isValidInteger } from "@dwtechs/checkard";
 import { archivePasswords } from "../../services/pwd.js";
-import { revokeUserSessions } from "../../services/session.js";
 
 /**
  * After `userEnt.archive` archives user rows in Megadex, archives their active
- * Foxnox password records and revokes their active Gatelin consumer sessions.
+ * Foxnox password records. Gatelin sessions are not revoked: refresh is denied
+ * for archived users, so access ends when the current access token expires.
  *
  * @param {import("express").Request} req
  * @param {import("express").Response} res
@@ -13,19 +13,19 @@ import { revokeUserSessions } from "../../services/session.js";
  */
 export async function archivePwd(req, res, next) {
   const rows = isArray(req.body?.rows) ? req.body.rows : [];
-  const userIds = rows
-    .map((r) => r?.id)
-    .filter((id) => isInteger(id, false))
-    .map(Number);
+  const ids = rows.map((row) => (isObject(row) ? row.id : row));
+  if (!ids.length || ids.some((id) => !isValidInteger(id, 1, undefined, false)))
+    return next({ statusCode: 400, message: "Invalid user ids for archive" });
 
-  if (!userIds.length) {
-    next();
-    return;
+  const userIds = [...new Set(ids.map(Number))];
+  try {
+    await archivePasswords(userIds, res.locals.consumer);
+  } catch (err) {
+    return next({
+      statusCode: err?.statusCode === 504 ? 504 : 502,
+      message:
+        "User profile archived, but authentication cleanup failed. Retry the archive request.",
+    });
   }
-
-  await Promise.all([
-    archivePasswords(userIds, res.locals.consumer),
-    revokeUserSessions(userIds, res.locals.consumer),
-  ]);
   next();
 }

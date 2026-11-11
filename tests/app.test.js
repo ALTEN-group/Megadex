@@ -1,3 +1,4 @@
+/** @jest-environment node */
 import { jest } from "@jest/globals";
 import request from "supertest";
 
@@ -42,6 +43,7 @@ class MockEntity {
       res.locals.total = 0;
       next();
     };
+    this.restore = this.archive;
     this.history = (options = {}) => {
       const tables = options.tables ?? [this.table];
       return (req, res, next) => {

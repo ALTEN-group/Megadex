@@ -554,6 +554,44 @@
           }
         }
       },
+      "restoreRequest": {
+        "type": "object",
+        "required": ["rows"],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "oneOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "string", "pattern": "^[1-9][0-9]*$" },
+                {
+                  "type": "object",
+                  "required": ["id"],
+                  "properties": {
+                    "id": {
+                      "oneOf": [
+                        { "type": "integer", "minimum": 1 },
+                        { "type": "string", "pattern": "^[1-9][0-9]*$" }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            "example": [1, 2]
+          }
+        }
+      },
+      "restoreResponse": {
+        "type": "object",
+        "required": ["rows", "total"],
+        "properties": {
+          "rows": { "type": "array", "maxItems": 0, "items": { "type": "object" } },
+          "total": { "type": "integer", "enum": [0] }
+        },
+        "example": { "rows": [], "total": 0 }
+      },
       "historyEntry": {
         "type": "object",
         "description": "Grouped `log.history` rows for one action (via `SQLEntity.history()`).",
@@ -1186,6 +1224,35 @@
         }
       }
     },
+    "/megadex/users/restore": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Restore user profiles by id",
+        "description": "Requires trusted consumer identity and the restoreUsers permission at Gatelin. Restores profiles only; passwords and sessions remain archived. IDs are validated and deduplicated; extra row fields are ignored. Uses an audited update, including for already-active rows.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/restoreRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Restore completed, including when no row matches",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/restoreResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/badRequestError" },
+          "401": { "$ref": "#/components/responses/unauthorizedError" },
+          "403": { "description": "Restore denied by ACL conditions" },
+          "5XX": { "$ref": "#/components/responses/unexpectedError" }
+        }
+      }
+    },
     "/megadex/users/archive": {
       "post": {
         "tags": [
@@ -1743,6 +1810,35 @@
           "404": {
             "$ref": "#/components/responses/notFoundError"
           }
+        }
+      }
+    },
+    "/megadex/socials/restore": {
+      "post": {
+        "tags": ["Social"],
+        "summary": "Restore social networks by id",
+        "description": "Requires trusted consumer identity and the restoreSocials permission at Gatelin. IDs are validated and deduplicated; extra row fields are ignored. Uses an audited update, including for already-active rows.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/restoreRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Restore completed, including when no row matches",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/restoreResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/badRequestError" },
+          "401": { "$ref": "#/components/responses/unauthorizedError" },
+          "403": { "description": "Restore denied by ACL conditions" },
+          "5XX": { "$ref": "#/components/responses/unexpectedError" }
         }
       }
     },

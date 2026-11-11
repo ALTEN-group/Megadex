@@ -1,5 +1,6 @@
 // @ts-check
 import { execute } from "@dwtechs/antity-pgsql";
+import { isArray, isObject } from "@dwtechs/checkard";
 import express from "express";
 import userEnt from "../entities/user.js";
 import {
@@ -9,7 +10,7 @@ import {
 } from "../middlewares/acl.js";
 import { archivePwd } from "../middlewares/http/archive-pwd.js";
 import { createPwd } from "../middlewares/http/create-pwd.js";
-import { syncUserLifecycle } from "../middlewares/http/sync-user-lifecycle.js";
+import { prepareRestoreRows } from "../middlewares/mappers/restore-rows.js";
 import { assertSuperAdminCeiling } from "../middlewares/mappers/user/assertSuperAdminCeiling.js";
 import schema from "../middlewares/schema.js";
 import {
@@ -90,6 +91,30 @@ function scopeSelfUpdate(req, res, next) {
   next();
 }
 
+/**
+ * Prevents an authenticated consumer from archiving their own user account.
+ *
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {import("express").NextFunction} next
+ */
+function preventSelfArchive(req, res, next) {
+  const rows = isArray(req.body?.rows) ? req.body.rows : [];
+  const userId = res.locals.consumer.userId;
+  // Archive accepts bare ids (ngx-crud-builder) or `{ id }` rows.
+  const includesSelf = rows.some(
+    (row) => Number(isObject(row) ? row.id : row) === userId,
+  );
+
+  if (includesSelf) {
+    return next({
+      statusCode: 403,
+      message: "You cannot archive your own user account",
+    });
+  }
+  next();
+}
+
 // Intentionally public to trusted service-network callers: Gatelin needs this
 // before it has a consumer identity. Database filters still constrain lookup.
 router.post(
@@ -150,15 +175,23 @@ router.put(
   assertSuperAdminCeiling,
   userEnt.updateArraySubstack,
   rolesToApi,
-  syncUserLifecycle,
 );
 router.post(
   "/archive",
   requireConsumer,
   enforceAcl(userEnt, "existing"),
+  preventSelfArchive,
   assertSuperAdminCeiling,
   userEnt.archive,
   archivePwd,
+);
+router.post(
+  "/restore",
+  requireConsumer,
+  enforceAcl(userEnt, "existing"),
+  prepareRestoreRows,
+  assertSuperAdminCeiling,
+  userEnt.restore,
 );
 router.get(
   "/schema",

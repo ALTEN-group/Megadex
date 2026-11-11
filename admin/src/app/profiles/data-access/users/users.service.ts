@@ -10,7 +10,11 @@ import { ActivatedRouteSnapshot } from "@angular/router";
 import { AclService } from "@core/acl/acl.service";
 import { ENTITY_API_PATHS } from "@core/app-config/app.api-paths";
 import { AdminEntity } from "@core/app-config/app.entities";
-import { Calls, CrudRepository } from "@dwtechs/ngx-crud-builder";
+import {
+  Calls,
+  CrudRepository,
+  filterCalls,
+} from "@dwtechs/ngx-crud-builder";
 import { UserLookups } from "app/profiles/data-access/lookups/lookup.model";
 import { Role } from "app/profiles/data-access/roles/role.model";
 import { USER_COLUMNS } from "app/profiles/data-access/users/user.conf";
@@ -51,13 +55,25 @@ export class UsersService {
     endpoint: ENTITY_API_PATHS[usersEntity],
   });
 
-  public readonly httpCalls: Calls<User> = {
-    get: this.crud.get,
-    create: (item) => this.crud.create(toApiUser(item)),
-    update: (item) => this.crud.update(toApiUser(item)),
-    archive: this.crud.archive,
-    getHistory: this.crud.getHistory,
-  };
+  public readonly httpCalls = computed<Calls<User>>(() => {
+    const acls = this.acls();
+    return filterCalls<User>(
+      {
+        get: this.crud.get,
+        create: (item) => this.crud.create(toApiUser(item)),
+        update: (item) => this.crud.update(toApiUser(item)),
+        archive: this.crud.archive,
+        restore: this.crud.restore,
+        getHistory: this.crud.getHistory,
+      },
+      {
+        canCreate: acls?.create?.allowed === true,
+        canUpdate: acls?.update?.allowed === true,
+        canArchive: acls?.archive?.allowed === true,
+        canRestore: acls?.restore?.allowed === true,
+      },
+    );
+  });
 
   public readonly config = (payload: ActivatedRouteSnapshot) =>
     computed(() =>

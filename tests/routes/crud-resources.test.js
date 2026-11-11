@@ -53,6 +53,8 @@ const entityUpdates = {};
 /** @type {Record<string, import("@jest/globals").Mock>} */
 const entityArchives = {};
 /** @type {Record<string, import("@jest/globals").Mock>} */
+const entityRestores = {};
+/** @type {Record<string, import("@jest/globals").Mock>} */
 const historyMiddlewares = {};
 
 for (const resource of RESOURCES) {
@@ -83,11 +85,17 @@ for (const resource of RESOURCES) {
     res.locals.total = res.locals.rows.length;
     next();
   });
+  const restore = jest.fn((req, res, next) => {
+    res.locals.rows = req.body.rows ?? [];
+    res.locals.total = res.locals.rows.length;
+    next();
+  });
 
   entityGets[tag] = get;
   entityAdds[tag] = addArraySubstack;
   entityUpdates[tag] = updateArraySubstack;
   entityArchives[tag] = archive;
+  entityRestores[tag] = restore;
 
   const getHistory = jest.fn((_req, res, next) => {
     res.locals.rows = [
@@ -115,6 +123,7 @@ for (const resource of RESOURCES) {
         addArraySubstack,
         updateArraySubstack,
         archive,
+        restore,
         getHistory,
         history: jest.fn(() => getHistory),
         privateProps: resource.privateProps,
@@ -146,6 +155,12 @@ for (const resource of RESOURCES) {
     }),
   );
 }
+
+// archivePwd calls Foxnox when its URL is set; these tests only check routing.
+jest.unstable_mockModule(
+  path.join(__dirname, "../../src/middlewares/http/archive-pwd.js"),
+  () => ({ archivePwd: jest.fn((_req, _res, next) => next()) }),
+);
 
 const { default: app } = await import("../../src/app.js");
 
@@ -236,9 +251,39 @@ describe.each(RESOURCES)("POST $mount/archive ($name)", ({ name, mount }) => {
     const res = await request(app)
       .post(`${mount}/archive`)
       .set(CONSUMER_HEADERS)
-      .send({ rows: [{ id: 1 }] });
+      .send({ rows: [{ id: 2 }] });
     expect(res.status).toBe(200);
     expect(entityArchives[name]).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe.each(RESOURCES)("POST $mount/restore ($name)", ({ name, mount }) => {
+  beforeEach(() => {
+    entityRestores[name].mockClear();
+  });
+
+  it("routes validated IDs to the entity restore method", async () => {
+    const res = await request(app)
+      .post(`${mount}/restore`)
+      .set(CONSUMER_HEADERS)
+      .send({ rows: [2, "3", { id: 4 }] });
+
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toMatch(/json/);
+    expect(res.body).toEqual({ rows: [2, 3, 4], total: 3 });
+    expect(entityRestores[name]).toHaveBeenCalledTimes(1);
+    const [req] = entityRestores[name].mock.calls[0];
+    expect(req.body.rows).toEqual([2, 3, 4]);
+  });
+
+  it("rejects a restore without consumer headers", async () => {
+    const res = await request(app)
+      .post(`${mount}/restore`)
+      .send({ rows: [2] });
+
+    expect(res.status).toBe(401);
+    expect(res.headers["content-type"]).toMatch(/text\/html/);
+    expect(entityRestores[name]).not.toHaveBeenCalled();
   });
 });
 
@@ -302,6 +347,7 @@ describe("POST /megadex/users Foxnox onboarding integration", () => {
       ok: true,
       status: 200,
       statusText: "OK",
+      json: async () => ({}),
     });
     global.fetch = /** @type {any} */ (fetchMock);
 
@@ -380,5 +426,30 @@ describe("User management service behaviors", () => {
     expect(allowed.status).toBe(200);
     const [req] = entityUpdates.users.mock.calls[0];
     expect(req.body.rows).toEqual([{ nickname: "newname", id: 1 }]);
+  });
+
+  it("rejects archiving the authenticated user, including mixed batches and bare ids", async () => {
+    entityArchives.users.mockClear();
+
+    const selfRes = await request(app)
+      .post("/megadex/users/archive")
+      .set(CONSUMER_HEADERS)
+      .send({ rows: [{ id: 1 }] });
+    expect(selfRes.status).toBe(403);
+    expect(entityArchives.users).not.toHaveBeenCalled();
+
+    const mixedRes = await request(app)
+      .post("/megadex/users/archive")
+      .set(CONSUMER_HEADERS)
+      .send({ rows: [{ id: 2 }, { id: "1" }] });
+    expect(mixedRes.status).toBe(403);
+    expect(entityArchives.users).not.toHaveBeenCalled();
+
+    const bareIdsRes = await request(app)
+      .post("/megadex/users/archive")
+      .set(CONSUMER_HEADERS)
+      .send({ rows: [2, 1] });
+    expect(bareIdsRes.status).toBe(403);
+    expect(entityArchives.users).not.toHaveBeenCalled();
   });
 });
