@@ -214,7 +214,15 @@ x-consumer-name: admin
 | `401` | Missing consumer headers |
 | `403` | Rows outside the caller's ACL conditions |
 
-Foxnox passwords stay archived and require a separate password reset; previous sessions stay revoked.
+Foxnox passwords stay archived until the user completes a separate password reset;
+previous sessions stay revoked. Restoration does not send an email automatically:
+the user selects **Forgot password** on the login page to request a recovery link.
+Completing recovery for an active restored profile replaces the newest archived
+password's hash before unarchiving that credential, preserves its 2FA enrollment,
+and leaves older passwords archived (requires the corresponding Foxnox recovery
+update). Inactive profiles remain unable to recover or sign in until reactivated.
+If password records have already been permanently purged, administrator
+provisioning is required. The user must sign in again after choosing the new password.
 
 ## Get User History
 

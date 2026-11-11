@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Document manual password recovery after user restoration: no automatic email, no old password/session reactivation; the Foxnox recovery update is required.
 - Fix user archive propagation for bare ids and Foxnox's `rows` payload; report incomplete authentication cleanup instead of silently ignoring Gatelin failures. Retrying the archive request completes remaining cleanup.
 - Prevent users from archiving their own account, including in mixed batches.
 - Register authenticated profile lookup in Gatelin.
