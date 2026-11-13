@@ -36,6 +36,9 @@ jobs:
 
       - name: Build
         working-directory: website
+        env:
+          # Project site is served from /<repo>/, not from the domain root.
+          VITEPRESS_BASE: /${{ github.event.repository.name }}/
         run: npm run build
 
       - name: Setup Pages
