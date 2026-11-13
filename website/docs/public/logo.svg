@@ -1,6 +1,6 @@
 <!-- Megadex wordmark: brand gradient tile + stylised M, followed by "egadex". -->
 <!-- Extra right padding so the wordmark is not clipped when Nunito falls back to Arial. -->
-<svg width="176" height="40" viewBox="0 0 176 40" xmlns="http://www.w3.org/2000/svg">
+<svg width="196" height="40" viewBox="0 0 196 40" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style>@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800&amp;display=swap');</style>
     <linearGradient id="megadexTile" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
