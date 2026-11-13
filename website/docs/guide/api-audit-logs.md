@@ -39,12 +39,7 @@ Authorization: Bearer <access_token>
       "userName": "admin",
       "recordId": 5,
       "kind": "change",
-      "changes": {
-        "job": {
-          "from": "Engineer",
-          "to": "Staff Engineer"
-        }
-      }
+      "changes": "job: Engineer → Staff Engineer"
     },
     {
       "id": 41,
@@ -56,16 +51,7 @@ Authorization: Bearer <access_token>
       "userName": "admin",
       "recordId": 12,
       "kind": "change",
-      "changes": {
-        "archived": {
-          "from": false,
-          "to": true
-        },
-        "archivedAt": {
-          "from": null,
-          "to": "2026-06-15T14:20:00.000Z"
-        }
-      }
+      "changes": "archived: false → true\narchivedAt: null → 2026-06-15T14:20:00.000Z"
     }
   ],
   "total": 2
@@ -78,15 +64,15 @@ Authorization: Bearer <access_token>
 |---|---|---|---|
 | `id` | `integer` | ✅ | Primary key of the underlying `log.history` entry |
 | `tstamp` | `date` | ✅ | Timestamp when the database mutation occurred |
-| `tableName` | `string` | ✅ | Audited table (`user`, `user_role`, `user_social`, `social`) |
+| `tableName` | `string` | ✅ | Audited table (`user`, `user_role`, `user_social`, `social`, `preference`) |
 | `operation` | `string` | ✅ | Raw SQL operation: `INSERT`, `UPDATE`, or `DELETE` |
 | `action` | `string` | ✅ | High-level action: `INSERT`, `UPDATE`, `DELETE`, `ARCHIVE` (when `archived` changed to `true`), or `RESTORE` (when `archived` changed to `false`) |
-| `userId` | `integer` | ✅ | ID of the user who triggered the change (`null` for system/background writes) |
+| `userId` | `integer` | ✅ | ID of the user who triggered the change (`-1` for system writes) |
 | `userName` | `string` | ✅ | Nickname of the user who triggered the change (`"system"` by default) |
 | `recordId` | `integer` | ✅ | Primary key (`id`) of the affected row |
-| `kind` | `string` | ✅ | `"change"` for meaningful data edits, or `"routine"` for automatic counter/timestamp bookkeeping |
-| `changes` | `object` | ⬜ | Map of `{ [field]: { from, to } }` computed by `src/middlewares/mappers/audit-changes.js` |
+| `kind` | `string` | ✅ | `"change"` for meaningful data edits, or `"routine"` for updates that only touch bookkeeping columns |
+| `changes` | `string` | ⬜ | One line per field, joined by newlines: `key: previous → new` on updates, `key: value` on inserts and deletes. Values are truncated to 80 characters. Computed by `src/middlewares/mappers/audit-changes.js` |
 
 ## Redaction & Privacy
 
-Raw `record`, `previous`, and `changedKeys` columns from `log.audit` are marked `privateField: true` on the `audit` entity. The `computeChanges` middleware (`src/middlewares/mappers/audit-changes.js`) strips any sensitive keys, skips bookkeeping metadata (`updatedAt`, `updaterId`, `updaterName`) on updates, and removes `record`, `previous`, and `changedKeys` before the response leaves the service.
+Raw `record`, `previous`, and `changedKeys` columns from `log.audit` are marked `privateField: true` on the `audit` entity. The `buildChanges` middleware (`src/middlewares/mappers/audit-changes.js`) prints sensitive keys as `[redacted]`, skips `id`, `createdAt`, `creatorId`, `creatorName` and null values on inserts and deletes, and removes `record`, `previous`, and `changedKeys` before the response leaves the service.

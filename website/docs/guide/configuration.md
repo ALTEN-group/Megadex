@@ -4,12 +4,12 @@ Variables for the `megadex` container.
 
 ## Required
 
-`src/conf/env.js` validates required variables at startup and fails fast with a consolidated error report if any are missing or invalid.
+`src/conf/env.js` validates `DB_JOB_USER` and `DB_JOB_PWD` at startup and fails fast if they are missing. The other database variables are read when the first connection is opened.
 
 | Variable | Description |
 |---|---|
 | `DB_HOST` | Hostname of the PostgreSQL container |
-| `DB_NAME` | Database name (default: `megadex`) |
+| `DB_NAME` | Database name |
 | `DB_USER` | Database user for Megadex HTTP request handling |
 | `DB_PWD` | Database password for `DB_USER` |
 | `DB_JOB_USER` | Database user for archive/history cron jobs (may execute `public.delete()` and `DELETE` from `log.history`) |
@@ -21,7 +21,7 @@ Variables for the `megadex` container.
 |---|---|---|
 | `PORT` | `3000` | Port Megadex listens on |
 | `DB_PORT` | `5432` | Port of the PostgreSQL container |
-| `DB_MAX_CONNECTIONS` | `10` | Maximum connections in the main `@dwtechs/antity-pgsql` pool |
+| `DB_MAX` | `10` | Maximum connections in the main `@dwtechs/antity-pgsql` pool and in the cron job pool |
 | `APP_NAME` | — | Compose stack naming input |
 | `ENV_NAME` | — | Compose environment/network naming input, e.g. `local`, `staging`, `prod` |
 | `SERVICE_NAME` | — | Service identity consumed by structured logging |

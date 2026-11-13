@@ -41,8 +41,8 @@ Authorization: Bearer <access_token>
     },
     {
       "id": 2,
-      "name": "GitHub",
-      "url": "https://www.github.com",
+      "name": "Instagram",
+      "url": "https://www.instagram.com",
       "archived": false,
       "archivedAt": null,
       "createdAt": "2026-01-01T00:00:00.000Z",
@@ -77,7 +77,7 @@ Authorization: Bearer <access_token>
 | Field | Type | Required on `POST` | Constraints |
 |---|---|---|---|
 | `name` | `string` | ✅ | `1..50` chars, unique on `lower(name)` |
-| `url` | `string` | ⬜ | max `255` chars |
+| `url` | `string` | ⬜ | max `255` chars, empty or a valid `http(s)` URL |
 
 ## Update Social Networks
 
@@ -89,7 +89,7 @@ Authorization: Bearer <access_token>
 {
   "rows": [
     {
-      "id": 2,
+      "id": 7,
       "name": "GitHub",
       "url": "https://github.com"
     }
@@ -120,7 +120,15 @@ Authorization: Bearer <access_token>
 }
 ```
 
-**Response (204 No Content):** rows are soft-deleted (`archived = true`, `archivedAt = NOW()`). Once archived, a social network can no longer be assigned in `socialsJsonAgg`, and the nightly cleanup job deletes it after two months.
+**Response (200 OK, empty `rows`):** rows are soft-deleted (`archived = true`, `archivedAt = NOW()`). Once archived, a social network can no longer be assigned in `socialsJsonAgg`, and the nightly cleanup job deletes it after two months.
+
+## Restore Social Networks
+
+```
+POST /megadex/socials/restore
+```
+
+Restores archived social networks.
 
 ## Get Entity Schema
 

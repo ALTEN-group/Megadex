@@ -1,7 +1,7 @@
 {
 	"name": "megadex",
 	"version": "0.1.0-alpha.1",
-	"description": "Megadex user profile, preferences, and reference-data service.",
+	"description": "Megadex user management service.",
 	"keywords": [
 		"user-profile",
 		"preferences",

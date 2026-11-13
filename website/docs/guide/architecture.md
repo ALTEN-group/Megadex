@@ -12,7 +12,7 @@ Client / BFF Request
 [startTimer] - Performance measurement
     ↓
 [JSON routers]
-    ├── /megadex/audit        → enforceAcl(auditEnt, "search") → auditEnt.get → computeChanges → send(auditEnt)
+    ├── /megadex/audit        → enforceAcl(auditEnt, "search") → auditEnt.get → buildChanges → send(auditEnt)
     ├── /megadex/users        → search / me / create / update / archive / schema / history     → send(userEnt)
     ├── /megadex/preferences  → requireConsumer → mapConsumer → preference CRUD                → send(preferenceEnt)
     ├── /megadex/socials      → social catalog CRUD                                            → send(socialEnt)
@@ -32,7 +32,7 @@ Every JSON router ends in the terminal `send(entity)` middleware (`src/middlewar
 | Middleware | Used by | Role |
 |---|---|---|
 | `rolesToDatabase` / `rolesToApi` / `rolesToSchema` | `users` | Maps public `roles` (`int[]`) to/from the private database column `rolesArrayAgg` on the `users` view, and exposes `roles` in `/megadex/users/schema`. |
-| `computeChanges` | `audit` | Computes `{ [field]: { from, to } }` diffs from `log.audit` snapshots while stripping bookkeeping columns (`updatedAt`, `updaterId`, `updaterName`). |
+| `buildChanges` | `audit` | Builds the `changes` text (`key: previous → new`, one line per field) from `log.audit` snapshots and redacts sensitive keys. |
 | `send(userEnt)` | `users` | Strips `rolesArrayAgg` (`privateField: true`) and projects `x-acl-fields`. |
 | `send(preferenceEnt)` | `preferences` | Strips `userId` (`privateField: true`) and projects `x-acl-fields`. |
 | `send(auditEnt)` | `audit` | Strips raw `record`, `previous`, and `changedKeys` (`privateField: true`) so only computed `changes` leave the service. |
@@ -109,7 +109,7 @@ When an administrator later deactivates that user (`active: false`), changes the
 
 ## Background Jobs
 
-Started with the process, before the HTTP listener, using a dedicated single-connection pool (`DB_JOB_USER`):
+Started with the process, before the HTTP listener, using a dedicated pool (`DB_JOB_USER`):
 
 - **Delete archived entities** — daily 02:00 UTC; hard-deletes `"user"` and `social` rows archived for more than 2 months via `public.delete()`
 - **Delete old history** — daily 03:00 UTC; removes `log.history` rows older than 6 months

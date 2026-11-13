@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "version": "1.0.0",
-    "title": "Megadex — user profile, preferences and reference data",
+    "title": "Megadex — user management, preferences and lookups",
     "description": "Megadex API, reached through Gatelin (Traefik `/api` → Gatelin → megadex), which authenticates the caller and injects the `x-consumer-*` headers.\n\n**How to try it.** Call `POST /gatelin/sessions` with a dev user, then click **Authorize** and paste the `accessToken`.\n\n**Dev credentials.** The `__EMAIL_<userId>__` / `__PWD_<userId>__` placeholders are replaced by `scripts/setup-mocks.sh` after it seeds the dev users' passwords in Foxnox. If you still see literal placeholders, run `scripts/setup-mocks.sh`."
   },
   "servers": [

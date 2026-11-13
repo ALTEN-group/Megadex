@@ -6,7 +6,7 @@
 docker compose logs megadex
 ```
 
-Megadex validates its environment and connects to Postgres at boot, so the usual causes are a missing `DB_HOST` / `DB_PWD` / `DB_JOB_USER` / `DB_JOB_PWD`, or the migration container not having finished. Check that `megadex_migration` exited successfully before the service tried to start.
+At boot Megadex validates its environment (`DB_JOB_USER` and `DB_JOB_PWD` are required). Database connections are opened lazily, so a missing `DB_HOST` or `DB_PWD` shows up at the first query or readiness check. The migration container not having finished is another usual cause. Check that `megadex_migration` exited successfully before the service tried to start.
 
 ## Megadex Is Reachable Directly
 

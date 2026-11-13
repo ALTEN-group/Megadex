@@ -111,5 +111,5 @@ Megadex already ships with a complete Angular 22 administration panel (served un
 
 - **Users (`/megadex/users`)** — Search, filter, create, edit, archive, and restore user profiles; assign Gatelin roles via `ADMIN_ROLES_SEARCH_URL`; edit social network handles dynamically loaded from `/api/megadex/socials/search`; inspect per-user change history.
 - **Social networks (`/megadex/socials`)** — Manage the catalog of supported social platforms and inspect per-row history.
-- **Audit log (`/megadex/audit-logs`)** — Filter and inspect field-level `{ from, to }` change diffs across `"user"`, `user_role`, `user_social`, and `social`.
+- **Audit log (`/megadex/auditLogs`)** — Filter and inspect field-level change diffs across `"user"`, `user_role`, `user_social`, `social` and `preference`.
 - **Saved table views** — Persist per-operator column layouts, widths, filters, and sort orders via `/api/megadex/preferences/:resource`.

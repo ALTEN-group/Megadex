@@ -6,7 +6,7 @@
 [![Version](https://img.shields.io/github/v/release/ALTEN-group/Megadex)](https://github.com/ALTEN-group/Megadex/releases/latest)
 [![Last release](https://img.shields.io/github/release-date/ALTEN-group/Megadex)](https://github.com/ALTEN-group/Megadex/releases/latest)
 
-User profile, preferences, and reference-data service: user accounts with aggregated roles and social network links, per-user table view preferences, and localized reference lookups. Megadex is an internal user store: put a Backend for Frontend in front of it as the public API layer. [Gatelin](https://gatelin.fr) is one such BFF, not a requirement.
+User management service: user accounts with social network links, per-user table view preferences, and localized reference lookups. Megadex is an internal user store: put a Backend for Frontend in front of it as the public API layer. [Gatelin](https://gatelin.fr) is one such BFF, not a requirement.
 
 ## Images
 
@@ -18,7 +18,7 @@ User profile, preferences, and reference-data service: user accounts with aggreg
 ## Features
 
 - **User profiles** — Manage user identities, contact information, consents, and active/archive lifecycle
-- **Roles & social links** — Aggregate user role assignments (`roles`) and social network handles (`socialsJsonAgg`) directly onto user records
+- **Social links** — Aggregate social network handles (`socialsJsonAgg`) and assigned role IDs (`roles`) directly onto user records
 - **Social networks catalog** — Manage supported social platforms (`socials`) with history tracking and soft archiving
 - **Table view preferences** — Per-user saved grid configurations (`preferences`) merged with locked system templates
 - **Reference lookups** — Localized read-only catalogs for countries (`countries`), civilities (`civilities`), and genders (`genders`)

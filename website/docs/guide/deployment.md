@@ -228,8 +228,8 @@ The `megadex_migration` container is controlled by environment variables:
 
 | Variable | Values | Description |
 |---|---|---|
-| `UPDATE` | `1` / `0` | When `1`: creates the database, applies all schema changesets and reference seed data, takes a snapshot, and provisions `DB_USER` and `DB_JOB_USER`. This is the normal deploy mode. When `0` (and `ROLLBACK=0`): diffs the live database against the reference snapshot and generates a changelog. Development tool only. |
-| `ROLLBACK` | integer > `1` | Rolls back the given number of changesets and takes a new snapshot. The current entrypoint does not enter rollback mode for `1`. |
+| `UPDATE` | `1` / `0` | When `1`: creates the database, applies all schema changesets and reference seed data, takes a snapshot when `LIQUIBASE_ENABLE_SNAPSHOT=1`, and provisions `DB_USER` and `DB_JOB_USER`. This is the normal deploy mode. When `0` (and `ROLLBACK=0`): diffs the live database against the reference snapshot and generates a changelog. Development tool only. |
+| `ROLLBACK` | integer > `1` | Rolls back the given number of changesets and takes a new snapshot when `LIQUIBASE_ENABLE_SNAPSHOT=1`. The current entrypoint does not enter rollback mode for `1`. |
 | `SNAPSHOT` | path | Reference snapshot path without the `.json` suffix, for example `snapshot/snapshot1`. |
 
 **Adding your own seed data:** mount a folder containing a `changelog.xml` at `/liquibase/data`. It is applied after the core schema and reference catalogs, so you can seed initial users or custom social platforms without rebuilding the image.

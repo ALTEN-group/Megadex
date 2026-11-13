@@ -33,7 +33,7 @@ Authorization: Bearer <access_token>
     {
       "id": 2,
       "gender": "M",
-      "civility": "MR",
+      "civility": "Mr.",
       "firstName": "John",
       "middleName": null,
       "lastName": "Doe",
@@ -43,8 +43,8 @@ Authorization: Bearer <access_token>
       "address": "10 Main St",
       "zipCode": "75001",
       "city": "Paris",
-      "country": "FR",
-      "nationality": "FR",
+      "country": "FRA",
+      "nationality": "FRA",
       "phone": "+33123456789",
       "birthdate": "1990-05-15",
       "portrait": null,
@@ -141,6 +141,7 @@ Authorization: Bearer <access_token>
 | `lastName` | `string` | `1..50` chars |
 | `nickname` | `string` | `1..30` chars, case-insensitively unique (`lower(nickname)`) |
 | `email` | `email` | `5..50` chars, case-insensitively unique (`lower(email)`) |
+| `roles` | `integer[]` | Non-empty array of positive role IDs |
 
 ## Update Users
 
@@ -177,7 +178,7 @@ GET /megadex/users/:id/history
 Authorization: Bearer <access_token>
 ```
 
-Returns the combined audit trail for user `:id` across `"user"`, `user_role`, and `user_social`, built from database triggers that record every change into `log.history`. History older than six months is purged nightly.
+Returns the combined audit trail for user `:id` across `"user"`, `user_role`, and `user_social`, built from `log.history`, which records every change. History older than six months is purged nightly.
 
 ## Archive Users
 
@@ -193,7 +194,7 @@ Authorization: Bearer <access_token>
 }
 ```
 
-**Response (204 No Content):** rows are soft-deleted — flagged `archived` with an `archivedAt` timestamp rather than removed. When `PWD_CREATE_URL` is set, Megadex also archives their Foxnox password rows. Gatelin sessions are not revoked; an existing session remains usable until its access token expires. The nightly cleanup job deletes archived rows for good after two months.
+**Response (200 OK, empty `rows`):** rows are soft-deleted — flagged `archived` with an `archivedAt` timestamp rather than removed. When `PWD_CREATE_URL` is set, Megadex also archives their Foxnox password rows. Gatelin sessions are not revoked; an existing session remains usable until its access token expires. The nightly cleanup job deletes archived rows for good after two months.
 
 A consumer cannot archive their own account: a batch containing the caller's id is rejected with `403` and nothing is archived.
 

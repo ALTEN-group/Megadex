@@ -80,24 +80,24 @@ The `"user"` base table holds core profile attributes, consent timestamps, and l
 
 Applications never query `"user"` directly. Instead, Megadex reads and writes the **`users` view**, which joins `"user"` with:
 
-- `"rolesArrayAgg"` — `ARRAY_AGG(user_role."roleId" ORDER BY "roleId")` (mapped by the Express layer to `roles`)
-- `"socialsJsonAgg"` — `JSON_OBJECT_AGG(social.name, user_social.handle)` for non-archived social platforms
+- `"rolesArrayAgg"` — array of `user_role."roleId"` ordered by `"roleId"`, empty array when none (mapped by the Express layer to `roles`)
+- `"socialsJsonAgg"` — JSONB object of `social.name` to `user_social.handle` for non-archived social platforms, empty object when none
 
-An `INSTEAD OF INSERT OR UPDATE` trigger (`iud_user`) makes the `users` view directly writable: inserting or updating a row on `users` writes the `"user"` table, reconciles `user_role` rows, and calls `set_user_socials()` to resolve platform names against `social` and upsert or delete `user_social` rows in a single transaction.
+An `INSTEAD OF INSERT OR UPDATE` trigger (`users_iud_trigger`, function `iud_user()`) makes the `users` view directly writable: inserting or updating a row on `users` writes the `"user"` table, reconciles `user_role` rows, and calls `set_user_socials()` to resolve platform names against `social` and upsert or delete `user_social` rows in a single transaction.
 
 ### `social`
 
-Catalog of supported social platforms (`Facebook`, `GitHub`, `Instagram`, `LinkedIn`, `Pinterest`, `Reddit`, `Snapchat`, `TikTok`, `Twitch`, `WhatsApp`, `X`, `YouTube` seeded by default). Adding a platform requires only inserting a row into `social`; archiving a platform prevents it from being assigned in `socialsJsonAgg`.
+Catalog of supported social platforms (`Facebook`, `Instagram`, `X`, `LinkedIn`, `YouTube`, `TikTok`, `GitHub`, `Pinterest`, `Discord`, `Reddit`, `Twitch` seeded by default). Adding a platform requires only inserting a row into `social`; archiving a platform prevents it from being assigned in `socialsJsonAgg`.
 
 ### `preference` and the `preferences` writable view
 
 Stores table column layouts (`conf`) for the Admin UI (`users` and `socials` resources).
 
 - Rows where `userId IS NULL` are **locked system templates** (`locked = true`).
-- Rows where `userId IS NOT NULL` belong to that operator (`locked = false`), capped at **5** per user and per resource by trigger `check_preference_limit`.
+- Rows where `userId IS NOT NULL` belong to that operator (`locked = false`), capped at **10** per user and per resource by trigger `trg_preference_limit` (function `check_preference_limit`).
 - `preference_selection` tracks which `preferenceId` a user currently has active for each `resourceName` (falling back to the `"Default"` template when no row exists).
 
-The writable **`preferences` view** exposes `locked` and `isActive` as computed columns and uses an `INSTEAD OF` trigger (`iud_preference`) to implement copy-on-write when an operator customizes a locked template.
+The writable **`preferences` view** exposes `locked` and `isActive` as computed columns and uses an `INSTEAD OF` trigger (`preferences_iud_trigger`, function `iud_preference`) to implement copy-on-write when an operator customizes a locked template.
 
 ## Reference Lookups & Audit Views
 
@@ -154,7 +154,7 @@ erDiagram
   }
 ```
 
-`country_trans`, `civility_trans`, and `gender_trans` hold localized labels in English (`en`) and French (`fr`), keyed by PostgreSQL domain codes (`country`, `civility`, `gender`, `language`).
+`country_trans`, `civility_trans`, and `gender_trans` hold localized labels in several languages (see [Reference Lookups](./api-lookups)), keyed by the `country` and `language` domains and the `civility` and `gender` enum types.
 
 ## Conventions
 
@@ -164,7 +164,7 @@ Every mutable table follows the same four patterns:
 
 **Audit columns.** Mutable tables carry `createdAt`, `creatorId`, `creatorName`, `updatedAt`, `updaterId`, and `updaterName`, stamped from the `x-consumer-user-id` and `x-consumer-name` headers forwarded by the BFF (or `-1` / `system` for seed data).
 
-**History triggers.** Database triggers record every `INSERT`, `UPDATE`, and `DELETE` on `"user"`, `user_role`, `user_social`, and `social` into `log.history`. Per-row history is exposed via `GET /:id/history`, while `log.audit` pairs each entry with its previous snapshot to power `POST /megadex/audit/search`. History older than six months is purged nightly.
+**History triggers.** Database triggers record every `INSERT`, `UPDATE`, and `DELETE` on `"user"`, `social` and `preference` into `log.history`; role and social changes on users are logged by `iud_user()` when their values change. Per-row history is exposed via `GET /:id/history`, while `log.audit` pairs each entry with its previous snapshot to power `POST /megadex/audit/search`. History older than six months is purged nightly.
 
 **Least-privilege database roles.** The migration entrypoint provisions two PostgreSQL roles: `DB_USER` (used by the HTTP server, with no `DELETE` privilege on `"user"`, `social`, or `log.history`) and `DB_JOB_USER` (used only by the nightly cleanup cron jobs).
 

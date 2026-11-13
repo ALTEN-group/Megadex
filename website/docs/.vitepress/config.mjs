@@ -5,7 +5,7 @@ const base = process.env.VITEPRESS_BASE || (process.env.NODE_ENV === 'production
 
 export default withMermaid(defineConfig({
   title: 'Megadex',
-  description: 'User profile, preferences, and reference-data service storing user accounts, aggregated roles, social handles, and localized catalogs',
+  description: 'User management service storing user accounts, social handles, preferences, and localized lookup lists',
   base,
   vite: {
     // mermaid >= 11.16 pulls CJS-only fastdom, which vitepress-plugin-mermaid does not pre-bundle

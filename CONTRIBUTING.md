@@ -199,7 +199,7 @@ Megadex ships two releasable images, published to the GitHub Container Registry 
 
 | Image | Description |
 |---|---|
-| `ghcr.io/alten-group/megadex` | The Node.js user profile, preferences, and reference-data service, plus the bundled Angular admin UI (served on `ADMIN_PORT` under `ADMIN_BASE_PATH`, default `/megadex`). |
+| `ghcr.io/alten-group/megadex` | The Node.js user management service, plus the bundled Angular admin UI (served on `ADMIN_PORT` under `ADMIN_BASE_PATH`, default `/megadex`). |
 | `ghcr.io/alten-group/megadex-migration` | A one-shot Liquibase container. Applies the Megadex DB schema and core seed data, then exits. It also applies application-specific seed data when mounted to `/liquibase/data`. |
 
 Documentation is published to GitHub Pages from `website/`; it is not a Docker image.

@@ -1,7 +1,7 @@
 {
   "name": "megadex-docs",
   "version": "0.1.0-alpha.1",
-  "description": "Documentation for Megadex, a user profile, preferences, and reference-data service.",
+  "description": "Documentation for Megadex, a user management service.",
   "private": true,
   "scripts": {
     "predev": "npm run sync:shaders",

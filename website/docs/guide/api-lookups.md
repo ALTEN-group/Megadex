@@ -6,13 +6,13 @@ Megadex provides three read-only localized reference catalogs backed by PostgreS
 - `/megadex/civilities`
 - `/megadex/genders`
 
-Each lookup exposes `POST /search` and `GET /schema` and is seeded in English (`en`) and French (`fr`).
+Each lookup exposes `POST /search` and `GET /schema` and is seeded with translations in several languages (for example `en` and `fr`). Countries cover `de`, `en`, `es`, `fr`, `it`, plus a few entries in `ja`, `pt` and `zh`; civilities and genders cover `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `nl`, `pt` and `zh`.
 
 Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`.
 
 ## Countries
 
-Returns ISO country codes along with localized country names (`trans`) and nationalities (`nationality`).
+Returns ISO 3166-1 alpha-3 country codes along with localized country names (`trans`) and nationalities (`nationality`).
 
 ```
 POST /megadex/countries/search
@@ -34,16 +34,16 @@ Authorization: Bearer <access_token>
 {
   "rows": [
     {
-      "code": "DE",
+      "code": "DEU",
       "lang": "fr",
       "trans": "Allemagne",
-      "nationality": "Allemande"
+      "nationality": "Allemand"
     },
     {
-      "code": "FR",
+      "code": "FRA",
       "lang": "fr",
       "trans": "France",
-      "nationality": "Française"
+      "nationality": "Français"
     }
   ]
 }
@@ -51,7 +51,7 @@ Authorization: Bearer <access_token>
 
 ## Civilities
 
-Returns localized honorifics (`MR`, `MRS`) with full labels (`trans`) and abbreviations (`abbr`).
+Returns localized honorifics (`Mr.`, `Mrs.`, `Ms.`) with full labels (`trans`) and abbreviations (`abbr`).
 
 ```
 POST /megadex/civilities/search
@@ -71,16 +71,22 @@ Authorization: Bearer <access_token>
 {
   "rows": [
     {
-      "code": "MR",
+      "code": "Mr.",
       "lang": "en",
       "trans": "Mister",
       "abbr": "Mr."
     },
     {
-      "code": "MRS",
+      "code": "Mrs.",
       "lang": "en",
       "trans": "Misses",
       "abbr": "Mrs."
+    },
+    {
+      "code": "Ms.",
+      "lang": "en",
+      "trans": "Miss",
+      "abbr": "Ms."
     }
   ]
 }
@@ -88,7 +94,7 @@ Authorization: Bearer <access_token>
 
 ## Genders
 
-Returns localized gender codes (`M`, `F`, `N`) with full labels (`trans`) and abbreviations (`abbr`).
+Returns localized gender codes (`M`, `F`) with full labels (`trans`) and abbreviations (`abbr`).
 
 ```
 POST /megadex/genders/search
@@ -107,9 +113,8 @@ Authorization: Bearer <access_token>
 ```json
 {
   "rows": [
-    { "code": "F", "lang": "fr", "trans": "Femme", "abbr": "F" },
-    { "code": "M", "lang": "fr", "trans": "Homme", "abbr": "H" },
-    { "code": "N", "lang": "fr", "trans": "Non binaire", "abbr": "NB" }
+    { "code": "F", "lang": "fr", "trans": "Féminin", "abbr": "F" },
+    { "code": "M", "lang": "fr", "trans": "Masculin", "abbr": "M" }
   ]
 }
 ```

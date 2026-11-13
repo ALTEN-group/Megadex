@@ -1,22 +1,15 @@
 # Overview
 
-Megadex is the user-profile, preference, and reference-data service for a microservices architecture. It owns everything that describes **who a user is**, so that authentication and business services can refer to users by a numeric `userId`:
+Megadex is the user management service for a microservices architecture. It owns everything that describes **who a user is**, so that authentication and business services can refer to users by a numeric `userId`:
 
-- 👤 **User profiles** — Identity, contact details, language, portrait, and GDPR/marketing consent timestamps
-- 🎭 **Role assignments** — Role IDs stored in `user_role` and exposed directly on user payloads as `roles`
+- 👤 **User profiles** — Identity, contact details, language, portrait, GDPR/marketing consent timestamps, and the role IDs assigned to each user (`roles`)
 - 🔗 **Social network links** — User handles stored in `user_social` and exposed directly on user payloads as `socialsJsonAgg`
 - 🌐 **Social networks catalog** — Supported social platforms (`social`) managed as data without schema migrations
 - 🗂️ **Table view preferences** — Per-user saved grid configurations (`preferences`) merged with locked system templates
 - 🌍 **Reference lookups** — Localized read-only catalogs for `countries`, `civilities`, and `genders` in English and French
 - 📜 **History & audit logs** — Trigger-backed change history (`log.history`) and structured field-level diffs (`log.audit`)
-- 🎛️ **Front-end admin** — Manage users, roles, social network catalogs, and audit logs through an Angular web interface
+- 🎛️ **Front-end admin** — Manage users, social network catalogs, and audit logs through an Angular web interface
 - 🛡️ **BFF ACL enforcement** — Enforce field allow-lists (`x-acl-fields`), row conditions (`x-acl-conditions`), and consumer attribution forwarded by the BFF
-
-## What Megadex Is Not
-
-Megadex deliberately stops at user profiles, preferences, and reference catalogs. **Password hashes, 2FA secrets, recovery tokens, and trusted devices** belong to your password service (such as [Foxnox](https://foxnox.fr)). When configured with [`PWD_CREATE_URL`](./configuration), Megadex automatically provisions or archives the corresponding password entry in Foxnox when a user is created or archived.
-
-Megadex also does not issue sessions or verify JWTs. A **Backend for Frontend** sits in front of it, resolves emails to user IDs via `/megadex/users/search` during login, issues JWT sessions, and forwards authenticated requests with ACL and consumer headers. [Gatelin](https://gatelin.fr) is the reference BFF used in these docs and in the Compose examples; any BFF that speaks the same HTTP contract works.
 
 ## Key Concepts
 
@@ -53,8 +46,8 @@ Supported social networks live in the `social` table rather than in application 
 
 Administrators can customize column order, column widths, active filters, and sort order on the Admin UI tables. Preferences are stored in `preference` and `preference_selection` behind the writable **`preferences` view**:
 
-- Rows with `userId IS NULL` are **locked system templates** (`Default`, `Identity`, `Contact`, `Location`, `Professional`, `Consent & Status`).
-- Editing a locked template automatically forks a personal preference row for the caller (copy-on-write), up to 5 personal views per user and per table. See [Preferences](./api-preferences).
+- Rows with `userId IS NULL` are **locked system templates** (`Default`, `Compact`, `Archives` and `Audit` for `users`; `Default`, `Compact` and `Archives` for `socials`).
+- Editing a locked template automatically forks a personal preference row for the caller (copy-on-write), up to 10 personal views per user and per table. See [Preferences](./api-preferences).
 
 ### Reference lookups
 

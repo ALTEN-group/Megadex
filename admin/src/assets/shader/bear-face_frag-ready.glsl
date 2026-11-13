@@ -228,9 +228,11 @@ float earTurnAt(float t, float side) {
 
 void main() {
   // Keep the background in frame space and draw the face enlarged.
-  const float zoom = 1.55;
+  const float zoom = 1.75;
+  // Shift the face down so the ears stay inside the round frame at this zoom.
+  const float dropY = 0.17;
   vec2 frame = 2.0 * (gl_FragCoord.xy - 0.5 * uScreenResolution.xy) / uScreenResolution.y;
-  vec2 uv = frame / zoom;
+  vec2 uv = (frame + vec2(0.0, dropY)) / zoom;
   float px = 1.6 / (uScreenResolution.y * zoom);
 
   Face f = fixedFace();
