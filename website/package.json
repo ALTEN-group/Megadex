@@ -4,6 +4,7 @@
   "description": "Documentation for Megadex, a user profile, preferences, and reference-data service.",
   "private": true,
   "scripts": {
+    "predev": "npm run sync:shaders",
     "dev": "vitepress dev docs --host",
     "prebuild": "npm run sync:shaders",
     "build": "vitepress build docs",
