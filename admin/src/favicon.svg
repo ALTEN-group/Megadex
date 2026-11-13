@@ -1,4 +1,4 @@
-<!-- Megadex favicon — stylised M knocked out of the brand gradient tile. -->
+<!-- Megadex favicon — stylised M knocked out of the brand gradient diamond. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
     <linearGradient id="megadexTile" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
@@ -6,11 +6,11 @@
       <stop offset="100%" stop-color="#4338CA" />
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#megadexTile)" />
+  <!-- Flat-top hexagon stretched to fill the whole 64x64 box, with long flat edges on top and bottom like the previous square tile; the round-joined stroke softens the corners. -->
+  <polygon points="62,32 51,62 13,62 2,32 13,2 51,2" fill="url(#megadexTile)" stroke="url(#megadexTile)" stroke-width="4" stroke-linejoin="round" />
   <!--
-    The M is the logo path (73x100 viewBox) scaled to 42px tall and centred.
-    Solid white rather than the gradient: at 16px the tile carries the brand
-    colour and the glyph needs maximum contrast to stay legible.
+    The M is the logo path (73x100 viewBox) at natural proportions, 42px tall and centred. Same size and position as on the previous square favicon.
+    Solid white, no outline.
   -->
   <g transform="translate(16.88 11) scale(0.42)">
     <path d="M 0 100 L 0 0 L 18 0 L 36 36 L 54 0 L 72 0 L 72 100

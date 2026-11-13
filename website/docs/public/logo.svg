@@ -1,6 +1,6 @@
-<!-- Megadex wordmark: brand gradient tile + stylised M, followed by "egadex". -->
+<!-- Megadex wordmark: brand gradient hexagon + stylised M, followed by "egadex". -->
 <!-- Extra right padding so the wordmark is not clipped when Nunito falls back to Arial. -->
-<svg width="196" height="40" viewBox="0 0 196 40" xmlns="http://www.w3.org/2000/svg">
+<svg width="191" height="40" viewBox="0 0 191 40" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style>@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800&amp;display=swap');</style>
     <linearGradient id="megadexTile" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
@@ -8,12 +8,13 @@
       <stop offset="100%" stop-color="#4338CA" />
     </linearGradient>
   </defs>
-  <rect width="40" height="40" rx="8.75" fill="url(#megadexTile)" />
-  <!-- The M is the logo path (73x100 viewBox) scaled to 26px tall and centred in the tile. -->
+  <!-- Flat-top hexagon filling the 40px box (same shape as favicon.svg, scaled by 40/64); the round-joined stroke softens the corners. -->
+  <polygon points="38.75,20 31.875,38.75 8.125,38.75 1.25,20 8.125,1.25 31.875,1.25" fill="url(#megadexTile)" stroke="url(#megadexTile)" stroke-width="2.5" stroke-linejoin="round" />
+  <!-- The M is the logo path (73x100 viewBox) scaled to 26px tall and centred, same proportions as in favicon.svg. -->
   <g transform="translate(10.55 6.875) scale(0.2625)">
     <path d="M 0 100 L 0 0 L 18 0 L 36 36 L 54 0 L 72 0 L 72 100
              L 54 100 L 54 38 L 36 72 L 18 38 L 18 100 Z"
           fill="#fff" />
   </g>
-  <text x="48" y="29" font-family="Nunito, Arial, sans-serif" font-weight="800" font-size="34" fill="#6366F1">egadex</text>
+  <text x="43" y="29" font-family="Nunito, Arial, sans-serif" font-weight="800" font-size="34" fill="#6366F1">egadex</text>
 </svg>
