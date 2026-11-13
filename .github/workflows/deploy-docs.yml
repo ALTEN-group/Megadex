@@ -1,8 +1,15 @@
 name: Deploy Docs to GitHub Pages
 
-# Same trigger as image publish: docs go live with a GitHub Release, not on
-# every push to main. workflow_dispatch remains for a manual rebuild.
+# Docs deploy on pushes to main that touch the docs (or the bear shader the
+# docs sync from the admin app), and on GitHub Releases. workflow_dispatch
+# remains for a manual rebuild.
 on:
+  push:
+    branches: [main]
+    paths:
+      - "website/**"
+      - "admin/src/assets/shader/bear-face_*.glsl"
+      - ".github/workflows/deploy-docs.yml"
   release:
     types: [published]
   workflow_dispatch:
