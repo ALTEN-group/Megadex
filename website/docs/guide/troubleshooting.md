@@ -41,9 +41,9 @@ The migration entrypoint enters rollback mode only when `ROLLBACK` is greater th
 
 ## User Creation Fails and Archives the New Row
 
-When `PWD_CREATE_URL` is set, `POST /megadex/users` calls Foxnox (`POST /foxnox/pwd`) right after inserting the user row. If Foxnox is unreachable or returns an error, Megadex soft-archives (`active = false, archived = true`) the newly created user so an account without credentials cannot be left active.
+When `PWD_CREATE_URL` is set, `POST /megadex/users` calls the password service's create endpoint right after inserting the user row. If the password service is unreachable or returns an error, Megadex soft-archives (`active = false, archived = true`) the newly created user so an account without credentials cannot be left active.
 
-Check that Foxnox is healthy on the internal network and that `PWD_CREATE_URL` points to `http://<foxnox-host>:3000/foxnox/pwd`.
+Check that the password service is healthy on the internal network and that `PWD_CREATE_URL` points to `http://<password-service-host>:3000/pwd`.
 
 ## 403 When Creating, Updating, or Archiving a User
 
@@ -71,4 +71,4 @@ Check the active catalog with `POST /megadex/socials/search` (filtering `archive
 
 ## Role Changes Do Not Take Effect Immediately
 
-Megadex does not revoke Gatelin sessions when an administrator updates a user's `roles`, sets `active: false`, or archives the account. Existing sessions remain usable until the access token expires; archived or inactive accounts cannot refresh their sessions.
+Megadex does not revoke BFF sessions when an administrator updates a user's `roles`, sets `active: false`, or archives the account. Existing sessions remain usable until the access token expires; archived or inactive accounts cannot refresh their sessions.

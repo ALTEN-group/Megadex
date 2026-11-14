@@ -2,7 +2,7 @@
 
 The `socials` resource manages the catalog of supported social platforms (`social` table). Keys in a user's `socialsJsonAgg` object must match a non-archived `name` in this catalog.
 
-Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`.
+Paths below use Megadex's internal `/megadex/…` mount. A BFF typically exposes the same routes publicly under `/api/megadex/…`.
 
 ## Search Social Networks
 

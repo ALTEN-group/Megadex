@@ -2,11 +2,11 @@
 
 The `users` resource manages user profiles, aggregated role assignments (`roles`), and social network handles (`socialsJsonAgg`) through the writable `users` PostgreSQL view.
 
-Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`; a custom BFF may use another public prefix.
+Paths below use Megadex's internal `/megadex/…` mount. A BFF typically exposes the same routes publicly under `/api/megadex/…`; a custom BFF may use another public prefix.
 
 ## Search Users
 
-Queries the `users` view with optional pagination, sorting, and field filters. This endpoint is also called internally by the BFF (`USER_SEARCH_URL`) and Foxnox to resolve an email address to a `userId` and role list during login or account recovery. When called without `x-consumer-*` headers, Megadex automatically defaults `filters.archived` to `false`.
+Queries the `users` view with optional pagination, sorting, and field filters. This endpoint is also called internally by the BFF (`USER_SEARCH_URL`) and the password service to resolve an email address to a `userId` and role list during login or account recovery. When called without `x-consumer-*` headers, Megadex automatically defaults `filters.archived` to `false`.
 
 ```
 POST /megadex/users/search
@@ -108,7 +108,7 @@ Authorization: Bearer <access_token>
 
 Creates one or more users along with their `roles` and `socialsJsonAgg` handles in a single transaction via the `iud_user` `INSTEAD OF INSERT` trigger.
 
-When `PWD_CREATE_URL` is configured, Megadex also provisions a password row in Foxnox for each created user (and soft-archives the new user row if provisioning fails). Assigning role `1` (**Super admin**) requires the caller to hold role `1` (`assertSuperAdminCeiling`).
+When `PWD_CREATE_URL` is configured, Megadex also provisions a password row in the password service for each created user (and soft-archives the new user row if provisioning fails). Assigning role `1` (**Super admin**) requires the caller to hold role `1` (`assertSuperAdminCeiling`).
 
 ```
 POST /megadex/users
@@ -147,7 +147,7 @@ Authorization: Bearer <access_token>
 
 Updates one or more users by `id`. Sending `roles` replaces the user's `user_role` rows; sending `socialsJsonAgg` reconciles the user's `user_social` handles (setting a key to `null` or `""` removes that social handle; omitting `socialsJsonAgg` leaves existing handles unchanged).
 
-Modifying a user who holds role `1` or assigning role `1` requires the caller to hold role `1`. Megadex does not revoke Gatelin sessions after role changes or deactivation; archived and inactive users cannot refresh their sessions, which remain usable until the current access token expires.
+Modifying a user who holds role `1` or assigning role `1` requires the caller to hold role `1`. Megadex does not revoke BFF sessions after role changes or deactivation; archived and inactive users cannot refresh their sessions, which remain usable until the current access token expires.
 
 ```
 PUT /megadex/users
@@ -194,18 +194,18 @@ Authorization: Bearer <access_token>
 }
 ```
 
-**Response (200 OK, empty `rows`):** rows are soft-deleted — flagged `archived` with an `archivedAt` timestamp rather than removed. When `PWD_CREATE_URL` is set, Megadex also archives their Foxnox password rows. Gatelin sessions are not revoked; an existing session remains usable until its access token expires. The nightly cleanup job deletes archived rows for good after two months.
+**Response (200 OK, empty `rows`):** rows are soft-deleted — flagged `archived` with an `archivedAt` timestamp rather than removed. When `PWD_CREATE_URL` is set, Megadex also archives their password service's password rows. BFF sessions are not revoked; an existing session remains usable until its access token expires. The nightly cleanup job deletes archived rows for good after two months.
 
 A consumer cannot archive their own account: a batch containing the caller's id is rejected with `403` and nothing is archived.
 
 Rows accept bare ids or `{ "id": n }` objects. When `PWD_CREATE_URL` is
-configured, archiving also archives active Foxnox passwords. Megadex does not
-revoke Gatelin sessions: Gatelin refuses to refresh tokens for archived or
+configured, archiving also archives active passwords in the password service. Megadex does not
+revoke BFF sessions: the BFF refuses to refresh tokens for archived or
 inactive users, so an open session ends when its access token expires
-(`ACCESS_TOKEN_DURATION` in Gatelin). The same applies to deactivation and role
-changes on `PUT /megadex/users`. Foxnox invalidates outstanding recovery
+(`ACCESS_TOKEN_DURATION` in the BFF). The same applies to deactivation and role
+changes on `PUT /megadex/users`. The password service invalidates outstanding recovery
 links, login challenges, and login-resume tickets before archiving passwords
-(requires the corresponding Foxnox archive update).
+(requires the corresponding password-service archive update).
 
 Cross-service cleanup is not a distributed transaction: the profile is already
 archived when cleanup starts. An upstream failure returns `502` (`504` for a
@@ -216,7 +216,7 @@ integration.
 
 ## Restore Users
 
-Restores archived user profiles (`archived = false`, `archivedAt = NULL`), preserving their `active` state. Rows accept bare ids or `{ "id": n }` objects; rows that are not archived are left unchanged. Gatelin grants this route to Super admin and Admin; the admin UI exposes it from the Users CRUD dialog or a table selection.
+Restores archived user profiles (`archived = false`, `archivedAt = NULL`), preserving their `active` state. Rows accept bare ids or `{ "id": n }` objects; rows that are not archived are left unchanged. A BFF typically grants this route to Super admin and Admin; the admin UI exposes it from the Users CRUD dialog or a table selection.
 
 ```http
 POST /megadex/users/restore
@@ -236,14 +236,14 @@ x-consumer-name: admin
 | `401` | Missing consumer headers |
 | `403` | Rows outside the caller's ACL conditions |
 
-Foxnox passwords stay archived until the user completes a separate password reset;
-previous Gatelin sessions are not revoked, so a refresh token that has not yet
-expired (Gatelin `REFRESH_TOKEN_DURATION`) works again once the profile is
+Passwords in the password service stay archived until the user completes a separate password reset;
+previous BFF sessions are not revoked, so a refresh token that has not yet
+expired (BFF `REFRESH_TOKEN_DURATION`) works again once the profile is
 restored. Restoration does not send an email automatically:
 the user selects **Forgot password** on the login page to request a recovery link.
 Completing recovery for an active restored profile replaces the newest archived
 password's hash before unarchiving that credential, preserves its 2FA enrollment,
-and leaves older passwords archived (requires the corresponding Foxnox recovery
+and leaves older passwords archived (requires the corresponding password-service recovery
 update). Inactive profiles remain unable to recover or sign in until reactivated.
 If password records have already been permanently purged, administrator
 provisioning is required. The user must sign in again after choosing the new password.

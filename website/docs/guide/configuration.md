@@ -29,11 +29,11 @@ Variables for the `megadex` container.
 
 ## Upstream Lifecycle Hooks
 
-When paired with a password service ([Foxnox](https://foxnox.fr)) and a BFF ([Gatelin](https://gatelin.fr)), Megadex can propagate user lifecycle events over the internal network:
+When paired with a a password service and a BFF, Megadex can propagate user lifecycle events over the internal network:
 
 | Variable | Default | Description |
 |---|---|---|
-| `PWD_CREATE_URL` | — | Credential-provisioning endpoint on your password service (e.g. `http://<foxnox-host>:3000/foxnox/pwd`). When set, `POST /megadex/users` provisions a password row for each created user (and soft-archives the new user if provisioning fails), and `POST /megadex/users/archive` archives the user's password row. |
+| `PWD_CREATE_URL` | — | Credential-provisioning endpoint on your password service (e.g. `http://<password-service-host>:3000/pwd`). When set, `POST /megadex/users` provisions a password row for each created user (and soft-archives the new user if provisioning fails), and `POST /megadex/users/archive` archives the user's password row. |
 | `UPSTREAM_TIMEOUT_MS` | `30000` | Timeout in milliseconds for outbound HTTP calls to `PWD_CREATE_URL`. |
 
 ## Admin UI
@@ -42,8 +42,8 @@ When paired with a password service ([Foxnox](https://foxnox.fr)) and a BFF ([Ga
 |---|---|---|
 | `ADMIN_PORT` | — | Dedicated internal port used by the bundled admin server (`src/admin-server.js`). Unset disables that server. When set it must be an integer between 1024 and 65535, checked at startup in production. Compose commonly supplies `8080`. |
 | `ADMIN_BASE_PATH` | `/megadex` | Public path routed by Traefik to the bundled admin server. |
-| `ADMIN_SSO_TOKEN_KEY` | `sso_access_token` | `localStorage` key the admin UI stores the access token under. Injected at runtime (dev entrypoint + production `src/admin-server.js`), no rebuild required. Shared across Gatelin, Foxnox, and Megadex admin apps for seamless session reuse when switching between panels. |
-| `ADMIN_ROLES_SEARCH_URL` | `/api/gatelin/roles/search` | Gatelin "search roles" route the admin UI calls (with the operator's token) to populate the roles multiselect on the user form. Injected at runtime like `ADMIN_SSO_TOKEN_KEY`. |
+| `ADMIN_SSO_TOKEN_KEY` | `sso_access_token` | `localStorage` key the admin UI stores the access token under. Injected at runtime (dev entrypoint + production `src/admin-server.js`), no rebuild required. Shared across the BFF, password service, and Megadex admin apps for seamless session reuse when switching between panels. |
+| `ADMIN_ROLES_SEARCH_URL` | `/api/<bff>/roles/search` | BFF "search roles" route the admin UI calls (with the operator's token) to populate the roles multiselect on the user form. Injected at runtime like `ADMIN_SSO_TOKEN_KEY`. |
 
 ## Database migration service
 
@@ -66,14 +66,14 @@ These apply to the `megadex-migration` container (for example, `ghcr.io/alten-gr
 | `LIQUIBASE_LOG_LEVEL` | ⬜ | Liquibase log verbosity, e.g. `INFO`, `DEBUG` |
 | `TZ` | ⬜ | Timezone |
 
-## BFF & Password Service Variables (Gatelin & Foxnox example)
+## BFF & Password Service Variables (generic example)
 
 These are set on the **BFF** and **password service**, not on Megadex. See [Integration](./integration).
 
 | Service | Variable | Description |
 |---|---|---|
-| **Gatelin** | `USER_SEARCH_URL` | Must point at `http://<megadex-host>:<port>/megadex/users/search` so Gatelin can resolve an email address to a `userId` and `roles` list during login. |
-| **Foxnox** | `USER_SEARCH_URL` | Must point at `http://<megadex-host>:<port>/megadex/users/search` so Foxnox email workflows (password recovery, unlock, 2FA recovery) can resolve an email address to a `userId`. |
+| **BFF** | `USER_SEARCH_URL` | Must point at `http://<megadex-host>:<port>/megadex/users/search` so the BFF can resolve an email address to a `userId` and `roles` list during login. |
+| **Password service** | `USER_SEARCH_URL` | Must point at `http://<megadex-host>:<port>/megadex/users/search` so the password service's email workflows (password recovery, unlock, 2FA recovery) can resolve an email address to a `userId`. |
 
 ## Optional build mirrors
 

@@ -1,6 +1,6 @@
 # Data Model
 
-Megadex owns its own PostgreSQL database (`megadex` by default). Roles live in your BFF ([Gatelin](https://gatelin.fr)) — `user_role` stores plain `roleId` integers with no foreign key, because the `role` table is in the BFF's database.
+Megadex owns its own PostgreSQL database (`megadex` by default). Roles live in your BFF (Backend for Frontend) — `user_role` stores plain `roleId` integers with no foreign key, because the `role` table is in the BFF's database.
 
 ## Users, Roles, Socials & Preferences
 
@@ -42,7 +42,7 @@ erDiagram
 
   user_role {
     int userId PK, FK
-    int roleId PK "external (Gatelin)"
+    int roleId PK "external (BFF)"
   }
 
   user_social {

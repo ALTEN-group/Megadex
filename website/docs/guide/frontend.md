@@ -101,7 +101,7 @@ const response = await fetch('/api/megadex/users/search', {
 });
 ```
 
-In the default Gatelin seed (`db/liquibase/gatelin-data/04-permission.sql`), administrative CRUD routes are restricted to the **Super admin** (role 1) and **Admin** (role 2) roles, while `GET` and `PUT /api/megadex/users/me` are granted to every non-archived role.
+In the default BFF seed (`04-permission.sql`), administrative CRUD routes are restricted to the **Super admin** (role 1) and **Admin** (role 2) roles, while `GET` and `PUT /api/megadex/users/me` are granted to every non-archived role.
 
 If you are building custom admin screens, `GET /api/megadex/users/schema` and `GET /api/megadex/socials/schema` return the field definitions — types, limits, and which operations each field participates in — so forms stay in sync with the backend instead of duplicating validation rules.
 
@@ -109,7 +109,7 @@ If you are building custom admin screens, `GET /api/megadex/users/schema` and `G
 
 Megadex already ships with a complete Angular 22 administration panel (served under `ADMIN_BASE_PATH`, default `/megadex`) covering:
 
-- **Users (`/megadex/users`)** — Search, filter, create, edit, archive, and restore user profiles; assign Gatelin roles via `ADMIN_ROLES_SEARCH_URL`; edit social network handles dynamically loaded from `/api/megadex/socials/search`; inspect per-user change history.
+- **Users (`/megadex/users`)** — Search, filter, create, edit, archive, and restore user profiles; assign BFF roles via `ADMIN_ROLES_SEARCH_URL`; edit social network handles dynamically loaded from `/api/megadex/socials/search`; inspect per-user change history.
 - **Social networks (`/megadex/socials`)** — Manage the catalog of supported social platforms and inspect per-row history.
 - **Audit log (`/megadex/auditLogs`)** — Filter and inspect field-level change diffs across `"user"`, `user_role`, `user_social`, `social` and `preference`.
 - **Saved table views** — Persist per-operator column layouts, widths, filters, and sort orders via `/api/megadex/preferences/:resource`.

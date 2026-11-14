@@ -7,13 +7,13 @@ Megadex is distributed as Docker images on GitHub Container Registry:
 
 In production the admin UI is built into the Megadex image and enabled by setting `ADMIN_PORT`; Traefik routes `ADMIN_BASE_PATH` (default `/megadex`) to that internal port. Development keeps the admin in its own container for live reloading. The documentation site is published to GitHub Pages from `website/`.
 
-See the [Integration](./integration) page for BFF wiring (Gatelin and Foxnox are the worked examples) and [Environment Variables](./configuration) for the full variable reference.
+See the [Integration](./integration) page for BFF wiring (a generic BFF and password service are the worked examples) and [Environment Variables](./configuration) for the full variable reference.
 
 Use immutable release tags in production. The examples below use `0.1.0-alpha.1`; upgrade the API and migration images together when adopting a newer release.
 
 ## Architecture
 
-Megadex is an **internal service**. It has no public Traefik router for the JSON API: browsers and API clients reach it through a BFF, which typically strips a public `/api` prefix and forwards to Megadex on the internal network. The Compose template below uses [Gatelin](https://gatelin.fr) and [Foxnox](https://foxnox.fr); another BFF that issues sessions and proxies `/megadex/*` works the same way.
+Megadex is an **internal service**. It has no public Traefik router for the JSON API: browsers and API clients reach it through a BFF, which typically strips a public `/api` prefix and forwards to Megadex on the internal network. The Compose template below uses a generic BFF (`bff`) and password service; another BFF that issues sessions and proxies `/megadex/*` works the same way.
 
 ```
 Browser / Client
@@ -23,7 +23,7 @@ Browser / Client
       |
       +-- /megadex/* --> Megadex Admin UI (:8080)
       |
-      +-- /api/*     --> BFF (e.g. Gatelin)  (sessions, routing, ACL)
+      +-- /api/*     --> BFF  (sessions, routing, ACL)
                             |
                             +-- /megadex/*   --> Megadex JSON API (:3000)
 ```
@@ -125,13 +125,13 @@ services:
       APP_NAME: my-project
       ENV_NAME: local
       SERVICE_NAME: my-project-megadex-local
-      # Optional password lifecycle hook into Foxnox
-      PWD_CREATE_URL: http://my-project-foxnox-local:3000/foxnox/pwd
+      # Optional password lifecycle hook into the password service
+      PWD_CREATE_URL: http://my-project-password-service-local:3000/pwd
       # Bundled Admin UI
       ADMIN_PORT: 8080
       ADMIN_BASE_PATH: /megadex
       ADMIN_SSO_TOKEN_KEY: sso_access_token
-      ADMIN_ROLES_SEARCH_URL: /api/gatelin/roles/search
+      ADMIN_ROLES_SEARCH_URL: /api/<bff>/roles/search
     networks:
       - internal
     # Only the Admin UI port (8080) is routed through Traefik; the JSON API (3000)
@@ -149,40 +149,40 @@ services:
       timeout: 5s
       retries: 5
 
-  gatelin:
-    image: ghcr.io/alten-group/gatelin:latest
-    container_name: my-project-gatelin-local
-    hostname: my-project-gatelin-local
+  bff:
+    image: <bff-image>
+    container_name: my-project-bff-local
+    hostname: my-project-bff-local
     depends_on:
       megadex:
         condition: service_healthy
     environment:
       TZ: Europe/Paris
       USER_SEARCH_URL: http://my-project-megadex-local:3000/megadex/users/search
-      PWD_CHECK_URL: http://my-project-foxnox-local:3000/foxnox/pwd/compare
-      PWD_CHALLENGES_URL: http://my-project-foxnox-local:3000/foxnox/challenges
-      PWD_TRUSTED_DEVICES_URL: http://my-project-foxnox-local:3000/foxnox/devices/verify
-      PWD_LOGIN_TICKET_URL: http://my-project-foxnox-local:3000/foxnox/login-tickets/redeem
+      PWD_CHECK_URL: http://my-project-password-service-local:3000/pwd/compare
+      PWD_CHALLENGES_URL: http://my-project-password-service-local:3000/challenges
+      PWD_TRUSTED_DEVICES_URL: http://my-project-password-service-local:3000/devices/verify
+      PWD_LOGIN_TICKET_URL: http://my-project-password-service-local:3000/login-tickets/redeem
       DB_HOST: my-project-postgres-local
-      DB_NAME: gatelin
-      DB_USER: gatelin
-      DB_PWD: gatelin_pwd_change_me
+      DB_NAME: bff
+      DB_USER: bff
+      DB_PWD: bff_pwd_change_me
       TOKEN_SECRET: change_me_with_a_long_random_secret
       APP_NAME: my-project
       ENV_NAME: local
-      SERVICE_NAME: my-project-gatelin-local
+      SERVICE_NAME: my-project-bff-local
     networks:
       - internal
     labels:
       - "traefik.enable=true"
       - "stack.name=my-project-local"
-      - "traefik.http.routers.gatelin.rule=PathPrefix(`/api`)"
-      - "traefik.http.routers.gatelin.entrypoints=web"
-      - "traefik.http.routers.gatelin.service=gatelin"
-      - "traefik.http.routers.gatelin.middlewares=strip-prefix"
+      - "traefik.http.routers.bff.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.bff.entrypoints=web"
+      - "traefik.http.routers.bff.service=bff"
+      - "traefik.http.routers.bff.middlewares=strip-prefix"
       - "traefik.http.middlewares.strip-prefix.stripprefix.prefixes=/api"
       - "traefik.http.middlewares.strip-prefix.stripprefix.forceSlash=false"
-      - "traefik.http.services.gatelin.loadBalancer.server.port=3000"
+      - "traefik.http.services.bff.loadBalancer.server.port=3000"
 
 networks:
   internal:

@@ -2,11 +2,11 @@
 
 Megadex does not sit on the public internet by itself. Getting it working means wiring up three connections: a **Backend for Frontend** in front of it, your **password service** beside it, and the **route and permission seeds** on the BFF.
 
-The BFF authenticates callers, issues sessions, and proxies `/megadex/*`. [Gatelin](https://gatelin.fr) and [Foxnox](https://foxnox.fr) are the reference implementations used below. Another BFF or credential store that speaks the same HTTP contract works the same way.
+The BFF authenticates callers, issues sessions, and proxies `/megadex/*`. The examples below use generic names (`bff`, `password-service`); any BFF or credential store that speaks the same HTTP contract works the same way.
 
 ## 1. Point the BFF and Password Service at Megadex
 
-Both Gatelin (on login) and Foxnox (on password recovery, account unlock, and 2FA recovery) resolve an email address to a numeric `userId` by calling `POST /megadex/users/search` on the internal Docker network:
+Both the BFF (on login) and the password service (on password recovery, account unlock, and 2FA recovery) resolve an email address to a numeric `userId` by calling `POST /megadex/users/search` on the internal Docker network:
 
 ```
 USER_SEARCH_URL=http://my-project-megadex-local:3000/megadex/users/search
@@ -14,30 +14,30 @@ USER_SEARCH_URL=http://my-project-megadex-local:3000/megadex/users/search
 
 When `/megadex/users/search` is called on the internal network without `x-consumer-*` headers, Megadex automatically defaults `filters.archived` to `false` so archived accounts are never matched during login or recovery.
 
-## 2. Point Megadex at Foxnox and Gatelin
+## 2. Point Megadex at the Password Service and the BFF
 
-When an administrator creates or archives a user in Megadex, Megadex can synchronize the corresponding password record in Foxnox:
+When an administrator creates or archives a user in Megadex, Megadex can synchronize the corresponding password record in the password service:
 
 ```
-PWD_CREATE_URL=http://my-project-foxnox-local:3000/foxnox/pwd
+PWD_CREATE_URL=http://my-project-password-service-local:3000/pwd
 ```
 
 | Endpoint | Triggered by | What it does |
 |---|---|---|
-| `POST /foxnox/pwd` (`PWD_CREATE_URL`) | `POST /megadex/users` | Generates and stores a password hash in Foxnox for each new user. If Foxnox is unreachable or rejects the request, Megadex soft-archives the newly inserted user row so no account is left active without credentials. |
-| `POST /foxnox/pwd/archive` (derived from `PWD_CREATE_URL`) | `POST /megadex/users/archive` | Archives the user's password row in Foxnox so it stops matching logins. |
+| the password service's create endpoint (`PWD_CREATE_URL`) | `POST /megadex/users` | Generates and stores a password hash in the password service for each new user. If the password service is unreachable or rejects the request, Megadex soft-archives the newly inserted user row so no account is left active without credentials. |
+| the password service's archive endpoint (derived from `PWD_CREATE_URL`) | `POST /megadex/users/archive` | Archives the user's password row in the password service so it stops matching logins. |
 
-Megadex does not revoke Gatelin sessions after role changes, deactivation, or archival. Existing sessions remain usable until their access tokens expire.
+Megadex does not revoke BFF sessions after role changes, deactivation, or archival. Existing sessions remain usable until their access tokens expire.
 
-## 3. Register Megadex with the BFF (Gatelin example)
+## 3. Register Megadex with the BFF (seed data / route registration)
 
-Gatelin only forwards requests that match a registered route, so Megadex's endpoints have to exist as rows in Gatelin's database. A Megadex checkout ships this seed data at `db/liquibase/gatelin-data/`; mount that folder into Gatelin's migration container.
+The BFF only forwards requests that match a registered route, so Megadex's endpoints have to exist as rows in the BFF's database. A Megadex checkout ships this BFF seed data under `db/liquibase/` (the BFF seed folder); mount that folder into the BFF's migration container.
 
 ```yaml
-gatelin_migration:
-  image: ghcr.io/alten-group/gatelin-migration:latest
+bff_migration:
+  image: <bff-migration-image>
   volumes:
-    - ./db/liquibase/gatelin-data/:/liquibase/data
+    - ./db/liquibase/<bff-seed-folder>/:/liquibase/data
 ```
 
 The seed registers:
@@ -83,11 +83,11 @@ Work through these in order — each one depends on the last:
 # 1. Megadex is up and can reach its database
 docker exec my-project-megadex-local wget -qO- http://localhost:3000/megadex/health/ready
 
-# 2. The BFF can reach Megadex (Gatelin example)
-docker exec my-project-gatelin-local nc -zv my-project-megadex-local 3000
+# 2. The BFF can reach Megadex (generic example)
+docker exec my-project-bff-local nc -zv my-project-megadex-local 3000
 
 # 3. Internal user search resolves a seeded user
-docker exec my-project-gatelin-local wget -qO- \
+docker exec my-project-bff-local wget -qO- \
   --header='Content-Type: application/json' \
   --post-data='{"filters":{"email":{"value":"admin@example.com","matchMode":"="}}}' \
   http://my-project-megadex-local:3000/megadex/users/search

@@ -8,7 +8,7 @@ const demos = [
     eyebrow: "Sign in",
     title: "Secure sign-in through your BFF",
     details:
-      'Administrators authenticate through <a href="https://gatelin.fr" target="_blank" rel="noopener">Gatelin</a>, the reference BFF. Once signed in, they manage users, roles, social network catalogs, table preferences and the audit log from one panel.',
+      'Administrators authenticate through your Backend for Frontend (BFF). Once signed in, they manage users, roles, social network catalogs, table preferences and the audit log from one panel.',
     link: "/guide/overview",
   },
   {

@@ -2,7 +2,7 @@
 
 Preferences store per-user Admin UI configuration for a named resource (`users`, `socials` or `auditLogs`; locked templates are seeded for `users` and `socials`). The list for a resource merges **locked system templates** (`locked: true`) with the authenticated user's own rows (`locked: false`).
 
-Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`.
+Paths below use Megadex's internal `/megadex/…` mount. A BFF typically exposes the same routes publicly under `/api/megadex/…`.
 
 ## List Preferences
 

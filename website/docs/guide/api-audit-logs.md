@@ -2,7 +2,7 @@
 
 The `audit` resource exposes a read-only search endpoint over the `log.audit` view (`POST /megadex/audit/search`), powering the Admin UI audit log screen and security compliance queries.
 
-Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same route publicly under `/api/megadex/audit/search`.
+Paths below use Megadex's internal `/megadex/…` mount. A BFF typically exposes the same route publicly under `/api/megadex/audit/search`.
 
 ## Search Audit Logs
 

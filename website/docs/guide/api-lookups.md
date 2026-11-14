@@ -8,7 +8,7 @@ Megadex provides three read-only localized reference catalogs backed by PostgreS
 
 Each lookup exposes `POST /search` and `GET /schema` and is seeded with translations in several languages (for example `en` and `fr`). Countries cover `de`, `en`, `es`, `fr`, `it`, plus a few entries in `ja`, `pt` and `zh`; civilities and genders cover `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `nl`, `pt` and `zh`.
 
-Paths below use Megadex's internal `/megadex/…` mount. Gatelin typically exposes the same routes publicly under `/api/megadex/…`.
+Paths below use Megadex's internal `/megadex/…` mount. A BFF typically exposes the same routes publicly under `/api/megadex/…`.
 
 ## Countries
 
