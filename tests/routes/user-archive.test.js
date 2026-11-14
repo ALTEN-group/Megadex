@@ -54,7 +54,15 @@ function callsTo(url) {
     .map(([, options]) => JSON.parse(options.body));
 }
 
-function expectAuditedArchive(ids, index = 0) {
+// assertSuperAdminCeiling runs one lookup (caller + unique targets) before the
+// UPDATE, so the audited archive is the second DB call of each request.
+function expectCeilingLookup(targetIds, index = 0) {
+  const [sql, args] = execute.mock.calls[index];
+  expect(sql).toMatch(/^\s*SELECT\s+"userId"\s+FROM\s+user_role\b/i);
+  expect(args).toEqual([1, [42, ...targetIds]]);
+}
+
+function expectAuditedArchive(ids, index = 1) {
   const [sql, args] = execute.mock.calls[index];
   const n = ids.length;
   expect(sql).toBe(
@@ -97,7 +105,8 @@ describe("POST /megadex/users/archive", () => {
     "should archive %s with audited DB and Foxnox password cleanup only",
     async (_name, rows, ids) => {
       expectSuccess(await archive(rows));
-      expect(execute).toHaveBeenCalledTimes(1);
+      expect(execute).toHaveBeenCalledTimes(2);
+      expectCeilingLookup([7, 8]);
       expectAuditedArchive(ids);
       expect(callsTo(`${PASSWORDS}/search`)).toEqual([
         {
@@ -157,7 +166,8 @@ describe("POST /megadex/users/archive", () => {
     "should reject %s before profile or authentication writes",
     async (_name, body) => {
       const res = await request(app).post(ENDPOINT).set(CONSUMER).send(body);
-      expectError(res, 400, "Missing rows in req.body for archive operation");
+      // The ceiling guard validates rows before the archive handler can.
+      expectError(res, 400, "Missing rows in req.body");
       expect(execute).not.toHaveBeenCalled();
       expect(fetchMock).not.toHaveBeenCalled();
     },
@@ -178,6 +188,7 @@ describe("POST /megadex/users/archive", () => {
   });
 
   it("should not start cleanup if the profile archive fails", async () => {
+    execute.mockResolvedValueOnce({ rows: [], rowCount: 0 });
     execute.mockRejectedValueOnce(
       Object.assign(new Error("profile unavailable"), { statusCode: 500 }),
     );
@@ -289,7 +300,7 @@ describe("POST /megadex/users/archive", () => {
     // antity archive returns no rows even for an already archived profile.
     execute.mockResolvedValue({ rows: [], rowCount: 0 });
     expectSuccess(await archive([7]));
-    expectAuditedArchive([7], 1);
+    expectAuditedArchive([7], 3);
     expect(passwordActive).toBe(false);
     // A third retry finds nothing left (404) and still succeeds.
     expectSuccess(await archive([7]));

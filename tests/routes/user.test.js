@@ -55,6 +55,14 @@ function expectRestoreCall(index, ids) {
   expect(args).toEqual([...ids, 42, "restore-admin"]);
 }
 
+// assertSuperAdminCeiling runs one lookup (caller + targets) before the UPDATE.
+function expectCeilingLookup(index, targetIds) {
+  const [query, args, client] = execute.mock.calls[index];
+  expect(query).toMatch(/^\s*SELECT\s+"userId"\s+FROM\s+user_role\b/i);
+  expect(args).toEqual([1, [42, ...targetIds]]);
+  expect(client).toBeNull();
+}
+
 function expectAclSearch(ids) {
   const [query, args, client] = execute.mock.calls[0];
   expect(query).toMatch(/^\s*SELECT\b/i);
@@ -87,12 +95,12 @@ describe("POST /megadex/users/restore", () => {
     ["object ids", [{ id: 7 }, { id: "8" }]],
     ["mixed representations", [7, { id: "8" }]],
   ])("should restore %s with audited parameters", async (_name, rows) => {
-    execute.mockResolvedValueOnce({ rows: [], rowCount: 2 });
     const res = await request(app).post(ENDPOINT).set(CONSUMER).send({ rows });
 
     expectSuccess(res);
-    expect(execute).toHaveBeenCalledTimes(1);
-    expectRestoreCall(0, [7, 8]);
+    expect(execute).toHaveBeenCalledTimes(2);
+    expectCeilingLookup(0, [7, 8]);
+    expectRestoreCall(1, [7, 8]);
   });
 
   it("should normalize and deduplicate ids before the UPDATE", async () => {
@@ -102,8 +110,9 @@ describe("POST /megadex/users/restore", () => {
       .send({ rows: [8, "7", { id: "8" }, { id: 7 }, 8] });
 
     expectSuccess(res);
-    expect(execute).toHaveBeenCalledTimes(1);
-    expectRestoreCall(0, [8, 7]);
+    expect(execute).toHaveBeenCalledTimes(2);
+    expectCeilingLookup(0, [8, 7]);
+    expectRestoreCall(1, [8, 7]);
   });
 
   it("should still audit the native update when requested rows are already active", async () => {
@@ -113,8 +122,9 @@ describe("POST /megadex/users/restore", () => {
       .send({ rows: [7] });
 
     expectSuccess(res);
-    expect(execute).toHaveBeenCalledTimes(1);
-    expectRestoreCall(0, [7]);
+    expect(execute).toHaveBeenCalledTimes(2);
+    expectCeilingLookup(0, [7]);
+    expectRestoreCall(1, [7]);
   });
 
   it.each([
@@ -244,9 +254,10 @@ describe("POST /megadex/users/restore", () => {
       .send({ rows: [7, "7", { id: 8 }] });
 
     expectSuccess(res);
-    expect(execute).toHaveBeenCalledTimes(2);
+    expect(execute).toHaveBeenCalledTimes(3);
     expectAclSearch([7, 8]);
-    expectRestoreCall(1, [7, 8]);
+    expectCeilingLookup(1, [7, 8]);
+    expectRestoreCall(2, [7, 8]);
   });
 
   it.each([undefined, "active,email,nickname,roles", "nickname"])(
@@ -271,8 +282,9 @@ describe("POST /megadex/users/restore", () => {
       });
 
       expectSuccess(res);
-      expect(execute).toHaveBeenCalledTimes(1);
-      expectRestoreCall(0, [7]);
+      expect(execute).toHaveBeenCalledTimes(2);
+      expectCeilingLookup(0, [7]);
+      expectRestoreCall(1, [7]);
     },
   );
 
@@ -290,6 +302,7 @@ describe("POST /megadex/users/restore", () => {
   });
 
   it("should preserve a boundary error's explicit 500 status and Postgre prefix", async () => {
+    execute.mockResolvedValueOnce({ rows: [], rowCount: 0 });
     execute.mockRejectedValueOnce(
       Object.assign(new Error("Restore database unavailable"), {
         statusCode: 500,
@@ -301,11 +314,13 @@ describe("POST /megadex/users/restore", () => {
       .send({ rows: [7] });
 
     expectError(res, 500, "Postgre error: Restore database unavailable");
-    expect(execute).toHaveBeenCalledTimes(1);
-    expectRestoreCall(0, [7]);
+    expect(execute).toHaveBeenCalledTimes(2);
+    expectCeilingLookup(0, [7]);
+    expectRestoreCall(1, [7]);
   });
 
   it("should return the Postgre-prefixed boundary error with its explicit 500 status", async () => {
+    execute.mockResolvedValueOnce({ rows: [], rowCount: 0 });
     execute.mockRejectedValueOnce(
       Object.assign(new Error("Restore database unavailable"), {
         statusCode: 500,
@@ -315,9 +330,8 @@ describe("POST /megadex/users/restore", () => {
       .post(ENDPOINT)
       .set(CONSUMER)
       .send({ rows: [7] });
-    expect(execute).toHaveBeenCalledTimes(1);
-    expectRestoreCall(0, [7]);
-    expectRestoreCall(0, [7]);
+    expect(execute).toHaveBeenCalledTimes(2);
+    expectRestoreCall(1, [7]);
     expectError(res, 500, "Postgre error: Restore database unavailable");
   });
 });
