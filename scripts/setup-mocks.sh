@@ -185,10 +185,10 @@ done <<< "$PAIRS"
 echo ""
 echo -e "${YELLOW}🔁 Reloading swagger container...${NC}"
 if docker compose -f docker/docker-compose.yml --env-file "$ENV_FILE" restart swagger >/dev/null 2>&1; then
-  echo -e "${GREEN}✓${NC} Swagger: ${SERVER_SCHEME:-http://}${SERVER_URL:-localhost}:${TRAEFIK_PORT:-8100}/swagger"
+  echo -e "${GREEN}✓${NC} Swagger: ${SERVER_SCHEME:-http://}${SERVER_URL:-localhost}:${TRAEFIK_PORT:-8300}/swagger"
 else
   echo -e "${GREEN}✓${NC} Swagger container was not running — ${SWAGGER_FILE} is updated on disk."
 fi
 
 echo ""
-echo -e "${GREEN}✅ Done. Log in at ${SERVER_SCHEME:-http://}${SERVER_URL:-localhost}:${TRAEFIK_PORT:-8100}/megadex/ (credentials above; first one saved as E2E_EMAIL / E2E_PASSWORD in ${ENV_FILE}).${NC}"
+echo -e "${GREEN}✅ Done. Log in at ${SERVER_SCHEME:-http://}${SERVER_URL:-localhost}:${TRAEFIK_PORT:-8300}/megadex/ (credentials above; first one saved as E2E_EMAIL / E2E_PASSWORD in ${ENV_FILE}).${NC}"

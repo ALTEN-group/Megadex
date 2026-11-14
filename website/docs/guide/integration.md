@@ -93,6 +93,6 @@ docker exec my-project-bff-local wget -qO- \
   http://my-project-megadex-local:3000/megadex/users/search
 
 # 4. Authenticated self-service profile works through the BFF
-curl -i http://localhost:8100/api/megadex/users/me \
+curl -i http://localhost:8300/api/megadex/users/me \
   -H "Authorization: Bearer <access_token>"
 ```

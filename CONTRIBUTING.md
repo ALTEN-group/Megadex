@@ -31,12 +31,12 @@ Local endpoints once the stack is up:
 
 | Service | URL |
 |---|---|
-| Megadex Admin UI | `http://localhost:8100/megadex/` |
-| Gatelin Admin UI (roles, permissions, CORS) | `http://localhost:8100/gatelin/` |
-| Foxnox Admin UI (passwords, policies) | `http://localhost:8100/foxnox/` |
-| Swagger UI | `http://localhost:8100/swagger/` |
-| Adminer | `http://localhost:8100/adminer/` |
-| Mailpit UI | `http://localhost:8025/` |
+| Megadex Admin UI | `http://localhost:8300/megadex/` |
+| Gatelin Admin UI (roles, permissions, CORS) | `http://localhost:8300/gatelin/` |
+| Foxnox Admin UI (passwords, policies) | `http://localhost:8300/foxnox/` |
+| Swagger UI | `http://localhost:8300/swagger/` |
+| Adminer | `http://localhost:8300/adminer/` |
+| Mailpit UI | `http://localhost:8027/` |
 
 ### 3. Rotate the mock passwords (optional)
 
@@ -154,7 +154,7 @@ Pin `PLAYWRIGHT_VERSION` in `.env.dev` to whatever `admin/package.json`'s `@play
 ```sh
 cd admin
 npm run e2e:install       # once per machine — downloads Chromium
-npm run e2e               # runs against Traefik on localhost:8100
+npm run e2e               # runs against Traefik on localhost:8300
 npm run e2e:ui            # Playwright's interactive UI mode
 ```
 

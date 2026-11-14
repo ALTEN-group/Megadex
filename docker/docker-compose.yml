@@ -224,7 +224,7 @@ services:
     container_name: ${MAILPIT_HOST}
     hostname: ${MAILPIT_HOST}
     ports:
-      - ${MAILPIT_UI_PORT:-8025}:8025
+      - ${MAILPIT_UI_PORT:-8027}:8025
     networks:
       - internal
       - external
@@ -420,7 +420,7 @@ services:
     container_name: ${ADMIN_E2E_HOST}
     hostname: ${ADMIN_E2E_HOST}
     environment:
-      # Overrides playwright.config.ts's `http://localhost:8100/megadex/` default
+      # Overrides playwright.config.ts's `http://localhost:8300/megadex/` default
       # since localhost inside this container is the container itself.
       E2E_BASE_URL: ${ADMIN_E2E_BASE_URL}
       E2E_EMAIL: ${E2E_EMAIL:-}

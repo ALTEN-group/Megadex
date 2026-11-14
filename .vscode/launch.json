@@ -8,7 +8,7 @@
       "type": "chrome",
       "request": "launch",
       "name": "Front - admin",
-      "url": "http://localhost:8100/megadex",
+      "url": "http://localhost:8300/megadex",
       "webRoot": "${workspaceFolder}/admin"
     }
   ]
