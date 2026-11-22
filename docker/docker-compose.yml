@@ -104,7 +104,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   gatelin_migration:
-    image: ghcr.io/alten-group/gatelin-migration:${GATELIN_VERSION:-0.1.0-alpha.11}
+    image: ghcr.io/alten-group/gatelin-migration:${GATELIN_VERSION:-0.1.0}
     # platform: linux/amd64 # image is only published for amd64
     container_name: ${GATELIN_MIGRATION_HOST}
     hostname: ${GATELIN_MIGRATION_HOST}
@@ -134,7 +134,7 @@ services:
       - ${PWD}/db/liquibase/gatelin-data/:/liquibase/data
 
   gatelin:
-    image: ghcr.io/alten-group/gatelin:${GATELIN_VERSION:-0.1.0-alpha.11}
+    image: ghcr.io/alten-group/gatelin:${GATELIN_VERSION:-0.1.0}
     # platform: linux/amd64 # image is only published for amd64
     container_name: ${GATELIN_HOST}
     hostname: ${GATELIN_HOST}
@@ -194,7 +194,7 @@ services:
       retries: 5
 
   foxnox_migration:
-    image: ghcr.io/alten-group/foxnox-migration:${FOXNOX_VERSION:-0.1.0-alpha.5}
+    image: ghcr.io/alten-group/foxnox-migration:${FOXNOX_VERSION:-0.1.0}
     container_name: ${FOXNOX_MIGRATION_HOST}
     hostname: ${FOXNOX_MIGRATION_HOST}
     environment:
@@ -231,7 +231,7 @@ services:
     restart: unless-stopped
 
   foxnox:
-    image: ghcr.io/alten-group/foxnox:${FOXNOX_VERSION:-0.1.0-alpha.5}
+    image: ghcr.io/alten-group/foxnox:${FOXNOX_VERSION:-0.1.0}
     container_name: ${FOXNOX_HOST}
     hostname: ${FOXNOX_HOST}
     depends_on:
