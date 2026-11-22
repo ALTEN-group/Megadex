@@ -9,7 +9,7 @@ In production the admin UI is built into the Megadex image and enabled by settin
 
 See the [Integration](./integration) page for BFF wiring (a generic BFF and password service are the worked examples) and [Environment Variables](./configuration) for the full variable reference.
 
-Use immutable release tags in production. The examples below use `0.1.0-alpha.1`; upgrade the API and migration images together when adopting a newer release.
+Use immutable release tags in production. The examples below use `0.1.0-alpha.2`; upgrade the API and migration images together when adopting a newer release.
 
 ## Architecture
 
@@ -79,7 +79,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   megadex_migration:
-    image: ghcr.io/alten-group/megadex-migration:0.1.0-alpha.1
+    image: ghcr.io/alten-group/megadex-migration:0.1.0-alpha.2
     container_name: my-project-megadex-migration-local
     hostname: my-project-megadex-migration-local
     depends_on:
@@ -104,7 +104,7 @@ services:
       - internal
 
   megadex:
-    image: ghcr.io/alten-group/megadex:0.1.0-alpha.1
+    image: ghcr.io/alten-group/megadex:0.1.0-alpha.2
     container_name: my-project-megadex-local
     hostname: my-project-megadex-local
     depends_on:
@@ -236,7 +236,7 @@ The `megadex_migration` container is controlled by environment variables:
 
 ```yaml
 megadex_migration:
-  image: ghcr.io/alten-group/megadex-migration:0.1.0-alpha.1
+  image: ghcr.io/alten-group/megadex-migration:0.1.0-alpha.2
   volumes:
     - ./db/megadex/data:/liquibase/data
   environment:
