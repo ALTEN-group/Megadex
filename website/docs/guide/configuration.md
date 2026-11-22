@@ -47,7 +47,7 @@ When paired with a a password service and a BFF, Megadex can propagate user life
 
 ## Database migration service
 
-These apply to the `megadex-migration` container (for example, `ghcr.io/alten-group/megadex-migration:0.1.0-alpha.1`):
+These apply to the `megadex-migration` container (for example, `ghcr.io/alten-group/megadex-migration:0.1.0-alpha.2`):
 
 | Variable | Required | Description |
 |---|---|---|

@@ -219,11 +219,11 @@ Requires `docker/conf/.env.prod` to exist. Create it from `docker/conf/.env.prod
 
 Images are published automatically via `.github/workflows/publish.yml` when a GitHub Release is created. Publishing is scoped to the `ALTEN-group` org — `GITHUB_TOKEN` is sufficient, no PAT is needed.
 
-Each release produces the API (with bundled admin) and migration images with the following tag variants (for example, release `v0.1.0-alpha.1`):
+Each release produces the API (with bundled admin) and migration images with the following tag variants (for example, release `v0.1.0-alpha.2`):
 
 | Tag | Example |
 |---|---|
-| Full semver | `0.1.0-alpha.1` |
+| Full semver | `0.1.0-alpha.2` |
 | Major.minor | `0.1` |
 | Major | `0` |
 | Floating | `latest` |
@@ -268,7 +268,7 @@ When `UPDATE=1`, the container runs the following steps in order:
 
 ```yaml
 megadex_migration:
-  image: ghcr.io/alten-group/megadex-migration:0.1.0-alpha.1
+  image: ghcr.io/alten-group/megadex-migration:0.1.0-alpha.2
   volumes:
     - ./db/megadex/data:/liquibase/data
   environment:
